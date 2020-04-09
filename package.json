@@ -2,7 +2,7 @@
   "name": "miks-collaborative-editor",
   "version": "1.0.0",
   "description": "A collaborative editor that supports authorship display, image placeholder and CJK characters composition based on Quill and ShareDB.",
-  "main": "index.js",
+  "main": "editor.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
@@ -24,5 +24,11 @@
   "bugs": {
     "url": "https://github.com/we-miks/collaborative-editor/issues"
   },
-  "homepage": "https://github.com/we-miks/collaborative-editor#readme"
+  "homepage": "https://github.com/we-miks/collaborative-editor#readme",
+  "dependencies": {
+    "quill": "^1.3.7"
+  },
+  "devDependencies": {
+    "webpack": "^4.42.1"
+  }
 }

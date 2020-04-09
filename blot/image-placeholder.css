@@ -1,0 +1,33 @@
+.image-placeholder {
+    position: relative;
+    display: block;
+    background-color: #f0f0f0;
+    min-height: 150px;
+}
+.image-placeholder .image-mask {
+    display: block;
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #000000;
+    opacity: 0.3;
+}
+.image-placeholder .image-mask .loading {
+    display: block;
+    position: absolute;
+    width: 100px;
+    height: 100px;
+    text-align: center;
+    left: 50%;
+    margin-left: -50px;
+    top: 50%;
+    margin-top: -50px;
+}
+.image-placeholder .image-mask .loading i {
+    color: #fff;
+    font-size: 50px;
+    font-style: normal;
+    line-height: 100px;
+}
