@@ -27,7 +27,11 @@
   },
   "homepage": "https://github.com/we-miks/collaborative-editor#readme",
   "dependencies": {
-    "quill": "^1.3.7"
+    "lodash": "^4.17.15",
+    "quill": "^1.3.7",
+    "quill-image-drop-and-paste": "^1.0.4",
+    "rich-text": "^4.1.0",
+    "sharedb": "^1.3.2"
   },
   "devDependencies": {
     "@babel/core": "^7.9.0",

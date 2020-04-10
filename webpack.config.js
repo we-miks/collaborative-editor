@@ -11,14 +11,6 @@ module.exports = {
         path: path.resolve(__dirname, 'dist'),
     },
     devtool: 'source-map',
-    externals: {
-        quill: {
-            commonjs: 'quill',
-            commonjs2: 'quill',
-            amd: 'quill',
-            root: '_'
-        }
-    },
     module: {
         rules: [
             {

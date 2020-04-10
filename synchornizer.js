@@ -1,8 +1,7 @@
 import ReconnectingWebSocket from "reconnecting-websocket";
 import sharedb from 'sharedb/lib/client';
-import DraftAPI from '@/api/v3/draft';
 
-class ContentSynchronizer  {
+class Synchronizer  {
     constructor () {
         this.socket = null;
         this.connection = null;
@@ -10,66 +9,18 @@ class ContentSynchronizer  {
         this.debug = false;
         this.composition = null;
         this.closed = true;
-
-        this.onSyncContentHandlers = [];
-        this.onDraftDeletedHandlers = [];
+        this.upstreamDeltaHandler = null;
     }
 
-    setEditor(editor) {
-        this.editor = editor;
-        this.initEditorListener();
+    submitDeltaToUpstream(delta) {
+        this.doc.submitOp(delta, {source: 'user'});
     }
 
-    setComposition(composition) {
-        this.composition = composition;
-    }
-
-    initEditorListener() {
-
-        let self = this;
-
-        this.editor.on('text-change', function(delta, oldDelta, source) {
-
-            if(!self.doc || self.closed)
-                return;
-
-            let serial = Math.ceil(Math.random() * 1000);
-
-            self.log("[" + serial + "] Submit changes to server...");
-            self.log("[" + serial + "] The source is " + source);
-            self.log("[" + serial + "] " + JSON.stringify(delta));
-
-            if (source !== 'user')
-            {
-                self.log("[" + serial + "] " +  "The source is not user. Skip.");
-                return;
-            }
-
-            if(self.composition.isComposing()) {
-                self.log("pending op: " + JSON.stringify(delta));
-                self.composition.addPendingSubmitDelta(delta);
-            } else {
-                self.log("submitting op: " + JSON.stringify(delta));
-                self.doc.submitOp(delta, {source: "user"});
-            }
-
-            self.log("[" + serial + "] " +  "Submit finished.")
-        });
-    }
-
-    onSyncContent(handler) {
-        this.onSyncContentHandlers.push(handler);
-    }
-
-    onDraftDeleted(handler) {
-        this.onDraftDeletedHandlers.push(handler);
+    onUpstreamDelta(handler) {
+        this.upstreamDeltaHandler = handler;
     }
 
     syncDraft(draftId) {
-
-        this.onSyncContentHandlers.forEach((handler) => {
-            handler(draftId);
-        });
 
         this.close();
 
@@ -92,36 +43,13 @@ class ContentSynchronizer  {
             self.editor.setContents(self.doc.data);
 
             self.doc.on('op', function(delta, source) {
-
-                self.log("received delta: " + JSON.stringify(delta.ops));
-
-                let serial = Math.ceil(Math.random() * 1000);
-
-                self.log("[" + serial + "] Received OP on WebSocket");
-                self.log("[" + serial + "] The source is " + source);
-                self.log("[" + serial + "] " + JSON.stringify(delta));
-
-                if (source === "user")
-                {
-                    self.log("[" + serial + "] The source is user. Skip.");
-                    return;
-                }
-
-                if(self.composition.isComposing()) {
-                    self.composition.addUpstreamPendingDelta(delta);
-                } else {
-                    self.editor.updateContents(delta, source);
-                }
+                self.onUpstreamDelta(delta);
             });
 
             self.doc.on('del', function() {
                 // The draft has been published.
                 // Local session should be terminated.
                 self.close();
-
-                self.onDraftDeletedHandlers.forEach((handler) => {
-                    handler(draftId);
-                });
             });
         })
     }
@@ -149,4 +77,4 @@ class ContentSynchronizer  {
     }
 }
 
-export default ContentSynchronizer;
+export default Synchronizer;

@@ -1,13 +1,13 @@
 import Quill from "quill";
-
 const Delta = Quill.import("delta");
 
 class Composition {
-    constructor(quill) {
+    constructor(editor, synchronizer) {
 
-        this.quill = quill;
+        this.editor = editor;
+        this.quill = editor.quill;
+        this.synchronizer = synchronizer;
         this.compositionStatus = false;
-        this.doc = null;
 
         let self = this;
 
@@ -21,13 +21,11 @@ class Composition {
 
         this.latestCompositionEndTicket = null;
 
-        let editorContainerNode = document.getElementById('editor');
-
-        editorContainerNode.addEventListener("compositionstart", function(event){
+        this.quill.root.addEventListener("compositionstart", function(){
             self.compositionStatus = true;
         });
 
-        editorContainerNode.addEventListener("compositionend", function(event){
+        this.quill.root.addEventListener("compositionend", function(event){
 
             self.localPendingDeltas.push(self.localPendingDelta);
 
@@ -38,31 +36,58 @@ class Composition {
 
             setTimeout(() => {
 
-                // Handle cases where composition happens one character after another.
-                // In this case composition start happens right after a composition end
+                // Handle cases where composition start happens right after a composition end
                 // when user chooses a character using number keys.
 
                 if(self.isComposing() || ticket !== self.latestCompositionEndTicket) {
                     return;
                 }
 
-                let upstreamDelta = self.composeDeltas(self.upstreamPendingDeltas);
-
-                let finalSubmittedDelta = self.handleSubmitDeltaMerge(upstreamDelta);
-
-                self.handleLocalDeltaMerge(upstreamDelta, finalSubmittedDelta);
-
-                self.upstreamPendingDeltas.length = 0;
-                self.localPendingDelta = null;
-                self.localPendingDeltas.length = 0;
-                self.pendingSubmitDeltas.length = 0;
-
-                self.compositionEndEventHandlers.forEach((handler) => {
-                    handler(finalSubmittedDelta);
-                });
+                self.flush();
 
             }, 400);
         });
+
+        this.synchronizer.onUpstreamDelta((delta) => {
+            self.submitToEditor(delta);
+        });
+    }
+
+    flush() {
+        let upstreamDelta = this.composeDeltas(this.upstreamPendingDeltas);
+
+        let finalSubmittedDelta = this.handleSubmitDeltaMerge(upstreamDelta);
+
+        this.handleLocalDeltaMerge(upstreamDelta, finalSubmittedDelta);
+
+        this.upstreamPendingDeltas.length = 0;
+        this.localPendingDelta = null;
+        this.localPendingDeltas.length = 0;
+        this.pendingSubmitDeltas.length = 0;
+    }
+
+    submitToUpstream(delta, oldDelta) {
+        this.addPendingSubmitDelta(delta);
+
+        if(!this.isComposing()) {
+            this.flush();
+        }
+    }
+
+    submitToEditor(delta, oldDelta) {
+        this.addUpstreamPendingDelta(delta);
+
+        if(!this.isComposing()) {
+            this.flush();
+        }
+    }
+
+    submitLocalFixingDelta(delta, oldDelta) {
+        this.addLocalFixingDelta(delta);
+
+        if(!this.isComposing()) {
+            this.flush();
+        }
     }
 
     isComposing() {
@@ -123,12 +148,18 @@ class Composition {
         let transformedPendingSubmitDelta = upstreamDelta.transform(pendingSubmitDelta, true);
         this.logDelta("final submit", transformedPendingSubmitDelta);
 
-        this.doc.submitOp(transformedPendingSubmitDelta, {source: "user"});
+
+        // Delta could be modified by event handlers
+        // TODO: Authorship should receive this event and add authorship info
+        this.editor.dispatchEvent("beforeSubmitToUpstream", transformedPendingSubmitDelta);
+
+        // Submit to synchronizer
+        this.synchronizer.submitDeltaToUpstream(transformedPendingSubmitDelta);
 
         return transformedPendingSubmitDelta;
     }
 
-    addLocalPendingDelta(delta) {
+    addLocalFixingDelta(delta) {
         this.localPendingDelta = delta;
     }
 
@@ -138,10 +169,6 @@ class Composition {
 
     addPendingSubmitDelta(delta) {
         this.pendingSubmitDeltas.push(delta);
-    }
-
-    setDoc(doc) {
-        this.doc = doc;
     }
 
     composeDeltas(deltaArray) {
@@ -163,15 +190,5 @@ class Composition {
         console.log(msg + ": " + JSON.stringify(delta));
     }
 }
-
-let instance = null;
-
-Composition.InitComposition = (quill) => {
-    instance = new Composition(quill);
-};
-
-Composition.GetComposition = () => {
-    return instance;
-};
 
 export default Composition;
