@@ -4,19 +4,20 @@
   "description": "A collaborative editor that supports authorship display, image placeholder and CJK characters composition based on Quill and ShareDB.",
   "main": "editor.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "dist": "webpack --config webpack.config.prod.js",
+    "start": "webpack-dev-server --open"
   },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/we-miks/collaborative-editor.git"
   },
   "keywords": [
-    "collaborative",
-    "editor",
-    "operational",
-    "transformation",
+    "collaborative editor",
+    "operational transformation",
     "ot",
     "quill",
+    "sharedb",
     "authorship"
   ],
   "author": "Miks",
@@ -29,6 +30,13 @@
     "quill": "^1.3.7"
   },
   "devDependencies": {
-    "webpack": "^4.42.1"
+    "@babel/core": "^7.9.0",
+    "@babel/plugin-proposal-class-properties": "^7.8.3",
+    "@babel/preset-env": "^7.9.5",
+    "babel-loader": "^8.1.0",
+    "html-webpack-plugin": "^4.0.4",
+    "webpack": "^4.42.1",
+    "webpack-cli": "^3.3.11",
+    "webpack-dev-server": "^3.10.3"
   }
 }

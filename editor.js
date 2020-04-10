@@ -1,7 +1,17 @@
 
 class Editor {
+
+    options = {};
+
     constructor(options) {
 
+        if(options) {
+            this.options = options;
+        }
+    }
+
+    hello () {
+        return "Hello World!";
     }
 
     eventHandlers = {};
@@ -34,3 +44,5 @@ class Editor {
         }
     }
 }
+
+export default Editor;
