@@ -2,7 +2,7 @@ import Quill from "quill";
 
 import 'quill/dist/quill.bubble.css'
 import 'quill/dist/quill.core.css'
-import Authorship from "./modules/quill-authorship";
+import Authorship from "./authorship";
 import ImageHandlers from "./image-handlers";
 import Composition from "./composition";
 import shareDB from "sharedb/lib/client";
@@ -31,6 +31,9 @@ class Editor {
         this.imageHandlers = new ImageHandlers(this);
         this.composition = new Composition(this);
         this.synchronizer = new Synchronizer(this.composition);
+        this.composition.setSynchronizer(this.synchronizer);
+
+        this.authorship = new Authorship(this.quill, this.composition, editorOptions);
 
         let self = this;
 
@@ -55,24 +58,13 @@ class Editor {
                     matchers: [
                         ['img', this.imageHandlers.clipboardMatchImageHandler]
                     ]
-                },
-                authorship: {
-                    author: this.options.author
                 }
             }
         });
     }
 
-    syncDocument(doc) {
-        this.doc = doc;
-    }
-
-    submitLocalDelta(delta, source) {
-        this.quill.updateContents(delta, source);
-    }
-
-    submitUpstreamDelta(delta, source) {
-        this.doc.submitOp(delta, {source: source});
+    syncDocument(shareDBDocument) {
+        this.synchronizer.syncDocument(shareDBDocument);
     }
 
     eventHandlers = {};

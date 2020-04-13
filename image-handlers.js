@@ -31,7 +31,7 @@ class ImageHandlers {
 
         let self = this;
 
-        this.editor.options.handlers.imageDataURIUploadHandler(imageDataUrl, type)
+        this.editor.options.handlers.imageDataURIUpload(imageDataUrl, type)
             .then((imageUrl) => {
 
                 let index = self.removeImagePlaceholder(placeholderId);
@@ -111,7 +111,7 @@ class ImageHandlers {
                     setTimeout(() => {
                         self.previewInImagePlaceholder(placeholderId, src);
 
-                        self.editor.options.handlers.imageDataURIUploadHandler(src)
+                        self.editor.options.handlers.imageDataURIUpload(src)
                             .then(
                                 (imageUrl) => {
                                     self.replaceImagePlaceholderWithImage(placeholderId, imageUrl);
@@ -210,7 +210,7 @@ class ImageHandlers {
     }
 
     error(err) {
-        this.editor.options.handlers.imageUploadErrorHandler(err);
+        this.editor.options.handlers.imageUploadError(err);
     }
 }
 

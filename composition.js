@@ -2,11 +2,11 @@ import Quill from "quill";
 const Delta = Quill.import("delta");
 
 class Composition {
-    constructor(editor, synchronizer) {
+    constructor(editor) {
 
         this.editor = editor;
         this.quill = editor.quill;
-        this.synchronizer = synchronizer;
+        this.synchronizer = null;
         this.compositionStatus = false;
 
         let self = this;
@@ -27,7 +27,10 @@ class Composition {
 
         this.quill.root.addEventListener("compositionend", function(event){
 
-            self.localPendingDeltas.push(self.localPendingDelta);
+            if(self.localPendingDelta) {
+                self.localPendingDeltas.push(self.localPendingDelta);
+                self.localPendingDelta = null;
+            }
 
             self.compositionStatus = false;
 
@@ -47,10 +50,10 @@ class Composition {
 
             }, 400);
         });
+    }
 
-        this.synchronizer.onUpstreamDelta((delta) => {
-            self.submitToEditor(delta);
-        });
+    setSynchronizer(synchronizer) {
+        this.synchronizer = synchronizer;
     }
 
     flush() {
@@ -66,7 +69,7 @@ class Composition {
         this.pendingSubmitDeltas.length = 0;
     }
 
-    submitToUpstream(delta, oldDelta) {
+    submitToUpstream(delta) {
         this.addPendingSubmitDelta(delta);
 
         if(!this.isComposing()) {
@@ -74,7 +77,12 @@ class Composition {
         }
     }
 
-    submitToEditor(delta, oldDelta) {
+    setEditorContent(delta, source) {
+        // Used to initialize editor content
+        this.editor.setContents(delta, source);
+    }
+
+    submitToEditor(delta, source) {
         this.addUpstreamPendingDelta(delta);
 
         if(!this.isComposing()) {
@@ -82,7 +90,7 @@ class Composition {
         }
     }
 
-    submitLocalFixingDelta(delta, oldDelta) {
+    submitLocalFixingDelta(delta) {
         this.addLocalFixingDelta(delta);
 
         if(!this.isComposing()) {

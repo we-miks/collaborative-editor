@@ -1,6 +1,4 @@
 import Quill from "quill";
-import Composition from "../composition";
-import UserAPI from '@/api/v3/user';
 
 const Parchment = Quill.import("parchment");
 
@@ -11,55 +9,112 @@ const AuthorAttribute = new Parchment.Attributor.Class('author', 'ql-author', {
 Quill.register(AuthorAttribute);
 
 
-import './quill-authorship.css';
+import './authorship.css';
 
 class Authorship {
-    constructor(quill, options) {
+    constructor(editor, composition, options) {
 
-        if (!options.author) {
-            return;
+        this.editor = editor;
+        this.composition = composition;
+        this.author = options.author;
+
+        this.authorSidebar = new AuthorSidebar(editor.quill, AuthorAttribute, options);
+
+        let self = this;
+
+        this.editor.on("startSync", () => {
+            self.authorSidebar.reset();
+        });
+
+        this.editor.on("beforeSubmitToUpstream", ({delta}) => {
+            self.applyLocalFixingDelta(delta);
+        });
+
+        this.editor.on("editorTextChanged", ({delta, oldDelta}) => {
+            self.authorSidebar.update(delta, oldDelta);
+        });
+    }
+
+    applyLocalFixingDelta(delta) {
+
+        let Delta = Quill.import("delta");
+
+        const authorDelta = new Delta();
+        const authorFormat = { author: this.author.id };
+
+        let self = this;
+
+        delta.ops.forEach(op => {
+            if (op.delete) {
+                return;
+            }
+            if (op.insert || (op.retain && op.attributes)) {
+
+                // Add authorship to insert/format
+                op.attributes = op.attributes || {};
+                op.attributes.author = self.author.id;
+
+                // Apply authorship to our own editor
+                authorDelta.retain(
+                    op.retain || op.insert.length || 1,
+                    authorFormat,
+                );
+            } else {
+                authorDelta.retain(op.retain);
+            }
+        });
+
+        if (authorDelta.ops.length !== 0) {
+            self.composition.submitLocalFixingDelta(authorDelta);
         }
+    }
+}
+
+class AuthorSidebar {
+
+    constructor (quill, authorAttribute, options) {
 
         this.quill = quill;
         this.author = options.author;
+        this.authorAttribute = authorAttribute;
+        this.options = options;
 
-        this.authorSidebar = new AuthorSidebar(quill, this.author, AuthorAttribute);
+        // Add sidebar container to editor
+        this.sidebarNode = this.quill.addContainer("ql-author-sidebar");
+        this.sidebarNode.classList.add("single-author");
+
+        this.sidebarItems = [];
+        this.authorsInfo = {};
+
+        // Add the local editor's info into the authorsInfo
+        this.authorsInfo[this.author.id] = this.author;
+
+        // User main color for local editor
+        this.addStyleForAuthor(this.author.id, "#ed5634");
+
+        // The editor is never empty
+        this.createSidebarItem(-1);
+
+        this.colors = [
+            "#f7b452",
+            "#ef6c91",
+            "#8e6ed5",
+            "#6abc91",
+            "#5ac5c3",
+            "#7297e3",
+            "#9bc86e",
+            "#ebd562",
+            "#d499b9"
+        ];
+
+        this.identifiedAuthorIds = {};
+        this.identifiedAuthorCount = 0;
+        this.styleElement = null;
 
         let self = this;
-        let compositionEndHandlerRegistered = false;
-
-        if(options.contentSynchronizer) {
-            options.contentSynchronizer.onSyncContent(() => {
-                self.authorSidebar.reset();
-            });
-        }
-
-        quill.on(
-            "text-change",
-            (delta, oldDelta, source) => {
-
-                if(source === "user")
-                {
-                    self.applyLocalFixingDelta(delta);
-                }
-
-                let composition = Composition.GetComposition();
-                if(!composition.isComposing())
-                {
-                    self.authorSidebar.update(delta, oldDelta);
-                } else {
-                    if(!compositionEndHandlerRegistered) {
-                        composition.onCompositionEnd((delta) => {
-                            self.authorSidebar.update(delta, oldDelta);
-                        });
-                        compositionEndHandlerRegistered = true;
-                    }
-                }
-            },
-        );
 
         // On image load, update sidebar position
-        document.getElementById("editor").addEventListener(
+        quill.root.addEventListener(
             'load',
             function(event){
                 let domNode = event.target;
@@ -82,97 +137,12 @@ class Authorship {
                         let [lineBlot, offset] = quill.getLine(quill.getIndex(imageBlot));
 
                         let lineNumber = quill.getLines().indexOf(lineBlot);
-                        self.authorSidebar.adjustSidebarItemPosition(lineBlot, lineNumber);
-                    } else {
-
+                        self.adjustSidebarItemPosition(lineBlot, lineNumber);
                     }
                 }
             },
             true // useCapture
-        )
-    }
-
-    applyLocalFixingDelta(delta) {
-
-        let Delta = Quill.import("delta");
-
-        const authorDelta = new Delta();
-        const authorFormat = { author: this.author.out_uid };
-
-        let self = this;
-
-        delta.ops.forEach(op => {
-            if (op.delete) {
-                return;
-            }
-            if (op.insert || (op.retain && op.attributes)) {
-
-                // Add authorship to insert/format
-                op.attributes = op.attributes || {};
-                op.attributes.author = self.author.out_uid;
-
-                // Apply authorship to our own editor
-                authorDelta.retain(
-                    op.retain || op.insert.length || 1,
-                    authorFormat,
-                );
-            } else {
-                authorDelta.retain(op.retain);
-            }
-        });
-
-        if (authorDelta.ops.length !== 0) {
-
-            let composition = Composition.GetComposition();
-
-            if(composition.isComposing()) {
-                composition.addLocalPendingDelta(authorDelta);
-            } else {
-                this.quill.updateContents(authorDelta, "silent");
-            }
-        }
-    }
-}
-
-class AuthorSidebar {
-
-    constructor (quill, author, authorAttribute) {
-
-        this.quill = quill;
-        this.author = author;
-        this.authorAttribute = authorAttribute;
-
-        // Add sidebar container to editor
-        this.sidebarNode = this.quill.addContainer("ql-author-sidebar");
-        this.sidebarNode.classList.add("single-author");
-
-        this.sidebarItems = [];
-        this.authorsInfo = {};
-
-        // Add the local editor's info into the authorsInfo
-        this.authorsInfo[author.out_uid] = author;
-
-        // User main color for local editor
-        this.addStyleForAuthor(author.out_uid, "#ed5634");
-
-        // The editor is never empty
-        this.createSidebarItem(-1);
-
-        this.colors = [
-            "#f7b452",
-            "#ef6c91",
-            "#8e6ed5",
-            "#6abc91",
-            "#5ac5c3",
-            "#7297e3",
-            "#9bc86e",
-            "#ebd562",
-            "#d499b9"
-        ];
-
-        this.identifiedAuthorIds = {};
-        this.identifiedAuthorCount = 0;
-        this.styleElement = null;
+        );
     }
 
     reset () {
@@ -359,9 +329,9 @@ class AuthorSidebar {
 
             if(!this.authorsInfo[lineAuthorId]) {
                 // Author info must be retrieved from the store
-                UserAPI.getUserInfoById(lineAuthorId)
-                    .then((user) => {
-                        self.authorsInfo[lineAuthorId] = user;
+                self.options.handlers.getAuthorInfoById(lineAuthorId)
+                    .then((author) => {
+                        self.authorsInfo[lineAuthorId] = author;
                         self.updateAuthorInfoOnSidebarItem(sidebarItem, lineIndex, lineAuthorId);
                     })
                     .catch((err) => {

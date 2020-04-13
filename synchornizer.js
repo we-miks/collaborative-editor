@@ -1,70 +1,58 @@
-import ReconnectingWebSocket from "reconnecting-websocket";
-import sharedb from 'sharedb/lib/client';
 
 class Synchronizer  {
-    constructor () {
-        this.socket = null;
-        this.connection = null;
+    constructor (editor, composition) {
+        this.editor = editor;
+
         this.doc = null;
         this.debug = false;
-        this.composition = null;
-        this.closed = true;
-        this.upstreamDeltaHandler = null;
+        this.composition = composition;
     }
 
     submitDeltaToUpstream(delta) {
         this.doc.submitOp(delta, {source: 'user'});
     }
 
-    onUpstreamDelta(handler) {
-        this.upstreamDeltaHandler = handler;
-    }
-
-    syncDraft(draftId) {
+    syncShareDBDocument(shareDBDocument) {
 
         this.close();
 
-        this.socket = new ReconnectingWebSocket(DraftAPI.WebSocketSyncContent(draftId));
-        this.connection = new sharedb.Connection(this.socket);
-        this.doc = this.connection.get(draftId, 'richtext');
-
-        this.composition.setDoc(this.doc);
-
-        this.closed = false;
+        this.doc = shareDBDocument;
 
         let self = this;
 
-        this.doc.subscribe(function(err) {
+        shareDBDocument.subscribe(function(err) {
             if (err) {
                 self.log(err);
                 return;
             }
 
-            self.editor.setContents(self.doc.data);
+            self.composition.setEditorContent(self.doc.data);
 
-            self.doc.on('op', function(delta, source) {
-                self.onUpstreamDelta(delta);
+            shareDBDocument.on('op', function(delta, source) {
+
+                if(source !== 'api')
+                    return;
+
+                self.composition.submitToEditor(delta, source);
             });
 
-            self.doc.on('del', function() {
-                // The draft has been published.
+            shareDBDocument.on('del', function() {
+
+                // The doc has been deleted.
                 // Local session should be terminated.
                 self.close();
+                self.editor.dispatchEvent("deleteDocument", shareDBDocument);
             });
-        })
+
+            self.editor.dispatchEvent("startSync", shareDBDocument);
+        });
     }
 
     close() {
-        if(this.doc)
+        if(this.doc) {
             this.doc.destroy();
-
-        if(this.connection)
-            this.connection.close();
-
-        if(this.socket)
-            this.socket.close();
-
-        this.closed = true;
+            this.doc = null;
+        }
     }
 
     log(msg){

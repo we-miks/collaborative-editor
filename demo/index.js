@@ -1,5 +1,7 @@
 import Editor from "../editor";
 import 'quill/dist/quill.snow.css'
+import ReconnectingWebSocket from "reconnecting-websocket";
+import ShareDB from "sharedb/lib/client";
 
 let bindings = {
     'list autofill': {
@@ -8,11 +10,11 @@ let bindings = {
 };
 
 let author = {
-    id: '',
-    name: ''
+    id: 10,
+    name: 'Main Author'
 };
 
-let users = [
+let authors = [
     {
         id: 1,
         name: "User A"
@@ -35,25 +37,31 @@ let users = [
     }
 ];
 
+let testUrl = 'https://www.google.com/image.jpg';
+
 let editorOptions = {
     author: author,
     handlers: {
-        imageFileUploadHandler: () => {
-            // Upload file
+        imageFileUpload: () => {
+            return new Promise((resolve, reject) => {
+                resolve(testUrl);
+            });
         },
-        imageDataURIUploadHandler: () => {
-            // Upload image DataURI
+        imageDataURIUpload: () => {
+            return new Promise((resolve, reject) => {
+                resolve(testUrl);
+            });
         },
-        imageUploadErrorHandler: (err) => {
-
+        imageUploadError: (err) => {
+            console.log("image upload error: " + err);
         },
-        getUserInfo: (userId) => {
+        getAuthorInfoById: (authorId) => {
             return new Promise((resolve, reject) => {
 
-                let user = users[userId];
+                let author = authors[authorId];
 
-                if(user) {
-                    resolve(user);
+                if(author) {
+                    resolve(author);
                 }else{
                     reject("user not found");
                 }
@@ -75,10 +83,15 @@ let quillOptions = {
 
 let editor = new Editor("#container", editorOptions, quillOptions);
 
-let doc = null;
+let docId = null;
+
+let websocketEndpoint = "ws:/127.0.0.1:5000/ws/documents/";
+
+let socket = new ReconnectingWebSocket(websocketEndpoint);
+let connection = new ShareDB.Connection(socket);
+let doc = connection.get("documents", docId);
 
 editor.syncDocument(doc);
-
 
 function onBeforeToolbarImageUpload(file) {
     editor.dispatchEvent("toolbarBeforeImageUpload", file);
