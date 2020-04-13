@@ -83,13 +83,11 @@ let quillOptions = {
 
 let editor = new Editor("#container", editorOptions, quillOptions);
 
-let docId = null;
-
-let websocketEndpoint = "ws:/127.0.0.1:5000/ws/documents/";
+let websocketEndpoint = "ws://localhost:8080";
 
 let socket = new ReconnectingWebSocket(websocketEndpoint);
 let connection = new ShareDB.Connection(socket);
-let doc = connection.get("documents", docId);
+let doc = connection.get("examples", "test-doc");
 
 editor.syncDocument(doc);
 
