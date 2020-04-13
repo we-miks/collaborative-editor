@@ -1,6 +1,7 @@
 import Quill from "quill";
 
 const Parchment = Quill.import("parchment");
+const Delta = Quill.import("delta");
 
 const AuthorAttribute = new Parchment.Attributor.Class('author', 'ql-author', {
     scope: Parchment.Scope.INLINE
@@ -37,10 +38,8 @@ class Authorship {
 
     applyLocalFixingDelta(delta) {
 
-        let Delta = Quill.import("delta");
-
-        const authorDelta = new Delta();
-        const authorFormat = { author: this.author.id };
+        let authorDelta = new Delta();
+        let authorFormat = { author: this.author.id };
 
         let self = this;
 
