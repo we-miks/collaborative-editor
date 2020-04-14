@@ -36,7 +36,7 @@ class Synchronizer  {
                 if(source !== 'api')
                     return;
 
-                self.composition.submitToEditor(delta, source);
+                self.composition.submitToEditor(delta);
             });
 
             shareDBDocument.on('del', function() {

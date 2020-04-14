@@ -126,7 +126,7 @@ class AuthorSidebar {
     }
 
     reset () {
-        //this.sidebarNode.classList.add("single-author");
+        this.sidebarNode.classList.add("single-author");
         this.sidebarItems.forEach((item) => {
             item.remove();
         });

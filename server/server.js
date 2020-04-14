@@ -16,7 +16,7 @@ function createDoc(callback) {
     doc.fetch(function(err) {
         if (err) throw err;
         if (doc.type === null) {
-            doc.create([{insert: 'Hi!'}], 'rich-text', callback);
+            doc.create([{insert: 'Hi!', attributes:{author: 3}}], 'rich-text', callback);
             return;
         }
         callback();
