@@ -5,22 +5,9 @@ class ImageHandlers {
     constructor(editor) {
         this.editor = editor;
 
-        this.isToolbarUploading = false;
-        this.toolbarPlaceholderId = -1;
-
-        let self = this;
-
-        this.editor.on("toolbarBeforeImageUpload", function(file){
-            self.onBeforeImageUpload(file);
-        });
-
-        this.editor.on("toolbarImageUploadSuccess", function(imageUrl){
-            self.onImageUploadSuccess(imageUrl);
-        });
-
-        this.editor.on("toolbarImageUploadError", function(err){
-            self.onImageUploadError(err);
-        });
+        this.imageUploadButtonHandler = this.imageUploadButtonHandler.bind(this);
+        this.imageDropAndPasteHandler = this.imageDropAndPasteHandler.bind(this);
+        this.clipboardMatchImageHandler = this.clipboardMatchImageHandler.bind(this);
     }
 
     imageDropAndPasteHandler(imageDataUrl, type) {
@@ -48,47 +35,45 @@ class ImageHandlers {
             });
     }
 
-    onBeforeImageUpload(file) {
-
-        if (this.isToolbarUploading) {
-            this.error("请等待上传完成");
-            return false;
-        }
-
-        // Insert image placeholder
-        this.isToolbarUploading = true;
-        this.toolbarPlaceholderId = Math.ceil(Math.random() * 1000000);
-        this.insertImagePlaceholder(this.toolbarPlaceholderId);
-
-        // Load image preview
-
-        const reader = new FileReader();
+    imageUploadButtonHandler() {
+        let fileInput = document.createElement("input");
+        fileInput.setAttribute('type', 'file');
+        fileInput.setAttribute('accept', 'image/*')
 
         let self = this;
 
-        reader.addEventListener("load", function () {
+        fileInput.onchange = () => {
 
-            self.previewInImagePlaceholder(self.toolbarPlaceholderId, reader.result);
+            let files = fileInput.files;
+            if(files.length === 0) {
+                return;
+            }
 
-        }, false);
+            // Insert image placeholder
 
-        if (file) {
-            reader.readAsDataURL(file);
-        }
+            let toolbarPlaceholderId = Math.ceil(Math.random() * 1000000);
+            self.insertImagePlaceholder(toolbarPlaceholderId);
 
-        return true;
-    }
+            self.readFileAsDataURI(files[0])
+                .then((dataURI) => {
+                    self.previewInImagePlaceholder(toolbarPlaceholderId, dataURI);
 
-    onImageUploadSuccess(imageUrl) {
-        // Find image placeholder, delete it and insert a new image
-        this.replaceImagePlaceholderWithImage(this.toolbarPlaceholderId, imageUrl);
-        this.isToolbarUploading = false;
-    }
+                    self.editor.options.handlers.imageDataURIUpload(dataURI)
+                        .then((imageUrl) => {
+                            self.replaceImagePlaceholderWithImage(toolbarPlaceholderId, imageUrl);
+                        })
+                        .catch((err) => {
+                            self.error(err);
+                        });
 
-    onImageUploadError(err) {
-        console.log(err);
-        this.error("图片上传出错，请稍后再试...");
-        this.isToolbarUploading = false;
+                })
+                .catch((err) => {
+                    self.error(err);
+                    self.isToolbarUploading = false;
+                });
+        };
+
+        fileInput.click();
     }
 
     clipboardMatchImageHandler(node, delta) {
@@ -104,32 +89,40 @@ class ImageHandlers {
             if(op.insert && op.insert.image) {
                 let src = op.insert.image;
 
-                if(self.isDataURI(src)) {
+                let func;
 
+                if(self.isDataURI(src)) {
+                    func = self.editor.options.handlers.imageDataURIUpload;
+                }
+                if(self.isImageSrc(src)) {
+                    func = self.editor.options.handlers.imageSrcUpload;
+                } else {
+                    // Local files
+                    // Browser has no access to local files
+                    // So remove this file and show a message to user
+                    self.error("有些图片无法自动上传，请尝试使用工具栏的上传按钮手工上传");
+                    op.insert = "\n";
+                }
+
+                if(func) {
                     let placeholderId = Math.ceil(Math.random() * 1000000);
 
                     setTimeout(() => {
                         self.previewInImagePlaceholder(placeholderId, src);
 
-                        self.editor.options.handlers.imageDataURIUpload(src)
+                        func(src)
                             .then(
                                 (imageUrl) => {
                                     self.replaceImagePlaceholderWithImage(placeholderId, imageUrl);
                                 }).catch(
-                                (err) => {
-                                    self.error(err);
-                                });
+                            (err) => {
+                                self.error(err);
+                            });
 
                     }, 200);
 
                     delete op.insert.image;
                     op.insert.imagePlaceholder = placeholderId;
-
-                } else {
-                    // Browser has no access to local files
-                    // So remove this file and show a message to user
-                    self.error("有些图片无法自动上传，请尝试使用工具栏的上传按钮手工上传");
-                    op.insert = "\n";
                 }
             }
 
@@ -209,8 +202,37 @@ class ImageHandlers {
         return /^data:image\/\w+;base64,/.test(src);
     }
 
+    isImageSrc(src) {
+        return /^https?/.test(src);
+    }
+
     error(err) {
         this.editor.options.handlers.imageUploadError(err);
+    }
+
+    readFileAsDataURI(file) {
+
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+
+            if (!file) {
+                reject("no file chosen...");
+            }
+
+            reader.addEventListener("load", function () {
+                resolve(reader.result);
+            }, false);
+
+            reader.addEventListener("abort", function () {
+                reject("aborted");
+            }, false);
+
+            reader.addEventListener("error", function (err) {
+                reject(err);
+            }, false);
+
+            reader.readAsDataURL(file);
+        });
     }
 }
 

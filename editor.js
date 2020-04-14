@@ -50,6 +50,9 @@ class Editor {
             // Text change should only be processed by Composition and then send to others by our own event system.
             self.composition.submitToUpstream(delta, oldDelta, source);
         });
+
+        // Add image upload toolbar button handler
+        this.quill.getModule("toolbar").addHandler('image', this.imageHandlers.imageUploadButtonHandler);
     }
 
     mergeQuillOptions(options) {

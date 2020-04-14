@@ -31,18 +31,24 @@ let authors = [
     }
 ];
 
-let testUrl = 'https://www.google.com/image.jpg';
+let testUrl = 'https://yd.wemiks.com/banner-2d980584-yuanben.svg';
 
 let editorOptions = {
     author: author,
     handlers: {
-        imageFileUpload: () => {
-            return new Promise((resolve, reject) => {
+        imageDataURIUpload: (file) => {
+
+            console.log(file);
+
+            return new Promise((resolve) => {
                 resolve(testUrl);
             });
         },
-        imageDataURIUpload: () => {
-            return new Promise((resolve, reject) => {
+        imageSrcUpload: (src) => {
+
+            console.log(src);
+
+            return new Promise((resolve) => {
                 resolve(testUrl);
             });
         },
