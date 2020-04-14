@@ -3,15 +3,34 @@
     <head>
         <title>Miks Collaborative Editor Demo</title>
         <style>
-            #editor-container {
+            .page {
+                position: relative;
+                width: 760px;
+                margin: 50px auto;
+            }
+            .page .title {
+                text-align: center;
+                font-size: 24px;
+            }
+            .page .editor {
+                position: relative;
+                margin-top: 32px;
+            }
 
+            .editor-container {
+                padding: 0 48px;
+            }
+            .ql-editor {
+                min-height: 500px;
             }
         </style>
     </head>
     <body>
-        <div class="editor">
-            <div class="editor-toolbar" id="toolbar"></div>
-            <div class="editor-container" id="container"></div>
+        <div class="page">
+            <div class="title">Miks Collaborative Editor Demo</div>
+            <div class="editor">
+                <div class="editor-container" id="container"></div>
+            </div>
         </div>
     </body>
 </html>

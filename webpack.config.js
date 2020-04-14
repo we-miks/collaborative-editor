@@ -34,8 +34,8 @@ module.exports = {
     },
     devServer: {
         compress: false,
-        port: 9000,
-        openPage: '/demo.html'
+        port: 9001,
+        openPage: 'demo.html'
     },
     plugins: [
         new HtmlWebpackPlugin({

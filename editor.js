@@ -19,6 +19,10 @@ Quill.register('modules/imageDropAndPaste', QuillImageDropAndPaste);
 Quill.register(ImagePlaceholder);
 Quill.register("modules/authorship", Authorship);
 
+// For icons of header value 3
+const icons = Quill.import('ui/icons');
+icons['header'][3] = require('!html-loader!quill/assets/icons/header-3.svg');
+
 class Editor {
 
     constructor(container, editorOptions, quillOptions) {

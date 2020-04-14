@@ -3,12 +3,6 @@ import 'quill/dist/quill.snow.css'
 import ReconnectingWebSocket from "reconnecting-websocket";
 import ShareDB from "sharedb/lib/client";
 
-let bindings = {
-    'list autofill': {
-        prefix: /^\s*(0{1,1}\.|\*)$/
-    }
-};
-
 let author = {
     id: 10,
     name: 'Main Author'
@@ -71,12 +65,17 @@ let editorOptions = {
     }
 };
 
+let toolbarOptions = [
+    ['bold', 'italic', 'underline', 'strike'],
+    [{'header': 1}, {'header': 2}, {'header': 3}],
+    [{'list': 'ordered'}, {'list': 'bullet'}, {'indent': '+1'}, {'indent': '-1'}],
+    ['align', 'color', 'background'],
+    ['blockquote', 'code-block', 'link', 'image']
+];
+
 let quillOptions = {
     modules: {
-        keyboard: {bindings},
-        toolbar: {
-            container: "#toolbar",
-        }
+        toolbar: toolbarOptions
     },
     theme: 'snow'
 };
