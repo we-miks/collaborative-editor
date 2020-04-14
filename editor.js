@@ -12,7 +12,7 @@ import lodashObject from "lodash/fp/object";
 
 import QuillImageDropAndPaste from "quill-image-drop-and-paste";
 import ImagePlaceholder from "./blot/image-placeholder";
-import Synchronizer from "./synchornizer";
+import Synchronizer from "./synchronizer";
 
 Quill.register('modules/imageDropAndPaste', QuillImageDropAndPaste);
 
