@@ -1,4 +1,5 @@
 import Quill from "quill";
+import EditorEvents from "./editor-events";
 const Delta = Quill.import("delta");
 
 class Composition {
@@ -16,8 +17,6 @@ class Composition {
         this.pendingSubmitDeltas = [];
 
         this.localPendingDeltas = [];
-
-        this.compositionEndEventHandlers = [];
 
         this.latestCompositionEndTicket = null;
 
@@ -50,43 +49,70 @@ class Composition {
 
             }, 400);
         });
+
+        this.oldDelta = null;
+        this.quill.on('text-change', function(delta, oldDelta, source) {
+
+            if(source !== 'user')
+                return;
+
+            // old delta before composition
+            if(!self.isComposing()) {
+                self.oldDelta = oldDelta;
+            }
+
+            // Text change should only be processed by Composition and then send to others by our own event system.
+            self.submitToUpstream(delta);
+        });
     }
 
     setSynchronizer(synchronizer) {
         this.synchronizer = synchronizer;
     }
 
-    flush() {
+    flush(delta) {
         let upstreamDelta = this.composeDeltas(this.upstreamPendingDeltas);
 
         let finalSubmittedDelta = this.handleSubmitDeltaMerge(upstreamDelta);
 
-        this.handleLocalDeltaMerge(upstreamDelta, finalSubmittedDelta);
+        let finalAppliedDelta = this.handleLocalDeltaMerge(upstreamDelta, finalSubmittedDelta);
 
         this.upstreamPendingDeltas.length = 0;
         this.localPendingDelta = null;
         this.localPendingDeltas.length = 0;
         this.pendingSubmitDeltas.length = 0;
+
+        // oldDelta is before composition, finalSubmittedDelta does not include composition process
+        // oldDelta and delta is consistent
+
+        let currentDelta = finalAppliedDelta.ops.length === 0 ? delta : finalAppliedDelta;
+
+        this.editor.dispatchEvent(EditorEvents.editorTextChanged, {delta: currentDelta, oldDelta: this.oldDelta});
     }
 
     submitToUpstream(delta) {
         this.addPendingSubmitDelta(delta);
 
         if(!this.isComposing()) {
-            this.flush();
+            this.flush(delta);
         }
     }
 
     setEditorContent(delta, source) {
+
         // Used to initialize editor content
+        let oldDelta = this.editor.quill.getContents();
+
         this.editor.quill.setContents(delta, source);
+
+        this.editor.dispatchEvent(EditorEvents.editorTextChanged, {delta: delta, oldDelta: oldDelta});
     }
 
-    submitToEditor(delta, source) {
+    submitToEditor(delta) {
         this.addUpstreamPendingDelta(delta);
 
         if(!this.isComposing()) {
-            this.flush();
+            this.flush(delta);
         }
     }
 
@@ -138,10 +164,13 @@ class Composition {
 
             // Revert op is calculated on the final submitted delta, which is transformed on the upstream delta already.
             // So we run the upstream op first, then the final submitted op, then the revert op.
+
             localFixingDelta = upstreamDelta.compose(finalSubmittedDelta).compose(revertOp);
         }
 
         this.quill.updateContents(localFixingDelta, "silent");
+
+        return localFixingDelta;
     }
 
     handleSubmitDeltaMerge(upstreamDelta) {
@@ -151,7 +180,7 @@ class Composition {
         let transformedPendingSubmitDelta = upstreamDelta.transform(pendingSubmitDelta, true);
 
         // Delta could be modified by event handlers
-        this.editor.dispatchEvent("beforeSubmitToUpstream", transformedPendingSubmitDelta);
+        this.editor.dispatchEvent(EditorEvents.beforeSubmitToUpstream, transformedPendingSubmitDelta);
 
         // Submit to synchronizer
         this.synchronizer.submitDeltaToUpstream(transformedPendingSubmitDelta);

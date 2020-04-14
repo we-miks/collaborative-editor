@@ -34,39 +34,57 @@ let authors = [
 let testUrl = 'https://yd.wemiks.com/banner-2d980584-yuanben.svg';
 
 let editorOptions = {
-    author: author,
-    handlers: {
-        imageDataURIUpload: (file) => {
+    authorship: {
+        author: author,
+        authorColor: '#ed5634',
+        colors: [
+            "#f7b452",
+            "#ef6c91",
+            "#8e6ed5",
+            "#6abc91",
+            "#5ac5c3",
+            "#7297e3",
+            "#9bc86e",
+            "#ebd562",
+            "#d499b9"
+        ],
+        handlers: {
+            getAuthorInfoById: (authorId) => {
+                return new Promise((resolve, reject) => {
 
-            console.log(file);
+                    let author = authors[authorId];
 
-            return new Promise((resolve) => {
-                resolve(testUrl);
-            });
-        },
-        imageSrcUpload: (src) => {
+                    if(author) {
+                        resolve(author);
+                    }else{
+                        reject("user not found");
+                    }
 
-            console.log(src);
+                });
+            }
+        }
+    },
+    image: {
+        handlers: {
+            imageDataURIUpload: (file) => {
 
-            return new Promise((resolve) => {
-                resolve(testUrl);
-            });
-        },
-        imageUploadError: (err) => {
-            console.log("image upload error: " + err);
-        },
-        getAuthorInfoById: (authorId) => {
-            return new Promise((resolve, reject) => {
+                console.log(file);
 
-                let author = authors[authorId];
+                return new Promise((resolve) => {
+                    resolve(testUrl);
+                });
+            },
+            imageSrcUpload: (src) => {
 
-                if(author) {
-                    resolve(author);
-                }else{
-                    reject("user not found");
-                }
+                console.log(src);
 
-            });
+                return new Promise((resolve) => {
+                    resolve(testUrl);
+                });
+            },
+            imageUploadError: (err) => {
+                console.log("image upload error: " + err);
+            }
         }
     }
 };

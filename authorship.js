@@ -1,5 +1,7 @@
 import Quill from "quill";
 
+import EditorEvents from "./editor-events";
+
 const Parchment = Quill.import("parchment");
 const Delta = Quill.import("delta");
 
@@ -8,7 +10,6 @@ const AuthorAttribute = new Parchment.Attributor.Class('author', 'ql-author', {
 });
 
 Quill.register(AuthorAttribute);
-
 
 import './authorship.css';
 
@@ -23,15 +24,15 @@ class Authorship {
 
         let self = this;
 
-        this.editor.on("startSync", () => {
+        this.editor.on(EditorEvents.beforeSync, () => {
             self.authorSidebar.reset();
         });
 
-        this.editor.on("beforeSubmitToUpstream", (delta) => {
+        this.editor.on(EditorEvents.beforeSubmitToUpstream, (delta) => {
             self.applyLocalFixingDelta(delta);
         });
 
-        this.editor.on("editorTextChanged", ({delta, oldDelta}) => {
+        this.editor.on(EditorEvents.editorTextChanged, ({delta, oldDelta}) => {
             self.authorSidebar.update(delta, oldDelta);
         });
     }
@@ -80,31 +81,11 @@ class AuthorSidebar {
 
         // Add sidebar container to editor
         this.sidebarNode = this.quill.addContainer("ql-author-sidebar");
-        this.sidebarNode.classList.add("single-author");
 
         this.sidebarItems = [];
         this.authorsInfo = {};
 
-        // Add the local editor's info into the authorsInfo
-        this.authorsInfo[this.author.id] = this.author;
-
-        // User main color for local editor
-        this.addStyleForAuthor(this.author.id, "#ed5634");
-
-        // The editor is never empty
-        this.createSidebarItem(-1);
-
-        this.colors = [
-            "#f7b452",
-            "#ef6c91",
-            "#8e6ed5",
-            "#6abc91",
-            "#5ac5c3",
-            "#7297e3",
-            "#9bc86e",
-            "#ebd562",
-            "#d499b9"
-        ];
+        this.colors = options.colors;
 
         this.identifiedAuthorIds = {};
         this.identifiedAuthorCount = 0;
@@ -145,7 +126,7 @@ class AuthorSidebar {
     }
 
     reset () {
-        this.sidebarNode.classList.add("single-author");
+        //this.sidebarNode.classList.add("single-author");
         this.sidebarItems.forEach((item) => {
             item.remove();
         });
@@ -154,14 +135,19 @@ class AuthorSidebar {
         this.identifiedAuthorIds = {};
         this.identifiedAuthorCount = 0;
 
+        // Add the local editor's info into the authorsInfo
+        this.authorsInfo = {};
+        this.authorsInfo[this.author.id] = this.author;
+
+        // User main color for local editor
+        this.addStyleForAuthor(this.author.id, this.options.authorColor);
+
         this.createSidebarItem(-1);
     }
 
     update (delta, oldDelta) {
 
         this.searchAuthorFromDelta(delta);
-
-        let Delta = Quill.import("delta");
 
         // In deletion situations where we cannot determine which lines has been deleted
         // we calculate a parallel Delta with each step of the target delta so that we can

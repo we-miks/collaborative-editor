@@ -1,7 +1,7 @@
 import Quill from "quill";
 
-import 'quill/dist/quill.bubble.css'
-import 'quill/dist/quill.core.css'
+import 'quill/dist/quill.bubble.css';
+import 'quill/dist/quill.core.css';
 import Authorship from "./authorship";
 import ImageHandlers from "./image-handlers";
 import Composition from "./composition";
@@ -38,18 +38,9 @@ class Editor {
         this.synchronizer = new Synchronizer(this, this.composition);
         this.composition.setSynchronizer(this.synchronizer);
 
-        this.authorship = new Authorship(this, this.composition, editorOptions);
+        this.authorship = new Authorship(this, this.composition, editorOptions.authorship || {});
 
         let self = this;
-
-        this.quill.on('text-change', function(delta, oldDelta, source) {
-
-            if(source !== 'user')
-                return;
-
-            // Text change should only be processed by Composition and then send to others by our own event system.
-            self.composition.submitToUpstream(delta, oldDelta, source);
-        });
 
         // Add image upload toolbar button handler
         this.quill.getModule("toolbar").addHandler('image', this.imageHandlers.imageUploadButtonHandler);

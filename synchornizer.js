@@ -1,3 +1,4 @@
+import EditorEvents from "./editor-events";
 
 class Synchronizer  {
     constructor (editor, composition) {
@@ -26,6 +27,8 @@ class Synchronizer  {
                 return;
             }
 
+            self.editor.dispatchEvent(EditorEvents.beforeSync, shareDBDocument);
+
             self.composition.setEditorContent(self.doc.data);
 
             shareDBDocument.on('op', function(delta, source) {
@@ -41,10 +44,8 @@ class Synchronizer  {
                 // The doc has been deleted.
                 // Local session should be terminated.
                 self.close();
-                self.editor.dispatchEvent("deleteDocument", shareDBDocument);
+                self.editor.dispatchEvent(EditorEvents.documentDeleted, shareDBDocument);
             });
-
-            self.editor.dispatchEvent("startSync", shareDBDocument);
         });
     }
 

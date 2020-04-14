@@ -18,7 +18,7 @@ class ImageHandlers {
 
         let self = this;
 
-        this.editor.options.handlers.imageDataURIUpload(imageDataUrl, type)
+        this.editor.options.image.handlers.imageDataURIUpload(imageDataUrl, type)
             .then((imageUrl) => {
 
                 let index = self.removeImagePlaceholder(placeholderId);
@@ -58,7 +58,7 @@ class ImageHandlers {
                 .then((dataURI) => {
                     self.previewInImagePlaceholder(toolbarPlaceholderId, dataURI);
 
-                    self.editor.options.handlers.imageDataURIUpload(dataURI)
+                    self.editor.options.image.handlers.imageDataURIUpload(dataURI)
                         .then((imageUrl) => {
                             self.replaceImagePlaceholderWithImage(toolbarPlaceholderId, imageUrl);
                         })
@@ -92,10 +92,10 @@ class ImageHandlers {
                 let func;
 
                 if(self.isDataURI(src)) {
-                    func = self.editor.options.handlers.imageDataURIUpload;
+                    func = self.editor.options.image.handlers.imageDataURIUpload;
                 }
                 if(self.isImageSrc(src)) {
-                    func = self.editor.options.handlers.imageSrcUpload;
+                    func = self.editor.options.image.handlers.imageSrcUpload;
                 } else {
                     // Local files
                     // Browser has no access to local files
@@ -207,7 +207,7 @@ class ImageHandlers {
     }
 
     error(err) {
-        this.editor.options.handlers.imageUploadError(err);
+        this.editor.options.image.handlers.imageUploadError(err);
     }
 
     readFileAsDataURI(file) {
