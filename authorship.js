@@ -27,7 +27,7 @@ class Authorship {
             self.authorSidebar.reset();
         });
 
-        this.editor.on("beforeSubmitToUpstream", ({delta}) => {
+        this.editor.on("beforeSubmitToUpstream", (delta) => {
             self.applyLocalFixingDelta(delta);
         });
 

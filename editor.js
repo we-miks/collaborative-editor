@@ -23,17 +23,18 @@ class Editor {
 
     constructor(container, editorOptions, quillOptions) {
 
-        let options = this.mergeQuillOptions(quillOptions);
-
-        this.quill = new Quill(container, options);
         this.options = editorOptions;
 
         this.imageHandlers = new ImageHandlers(this);
+
+        let options = this.mergeQuillOptions(quillOptions);
+        this.quill = new Quill(container, options);
+
         this.composition = new Composition(this);
-        this.synchronizer = new Synchronizer(this.composition);
+        this.synchronizer = new Synchronizer(this, this.composition);
         this.composition.setSynchronizer(this.synchronizer);
 
-        this.authorship = new Authorship(this.quill, this.composition, editorOptions);
+        this.authorship = new Authorship(this, this.composition, editorOptions);
 
         let self = this;
 
@@ -49,14 +50,16 @@ class Editor {
 
     mergeQuillOptions(options) {
 
+        let self = this;
+
         return lodashObject.merge(options, {
             modules: {
                 imageDropAndPaste: {
-                    handler: this.imageHandlers.imageDropAndPasteHandler
+                    handler: self.imageHandlers.imageDropAndPasteHandler
                 },
                 clipboard: {
                     matchers: [
-                        ['img', this.imageHandlers.clipboardMatchImageHandler]
+                        ['img', self.imageHandlers.clipboardMatchImageHandler]
                     ]
                 }
             }
@@ -64,7 +67,7 @@ class Editor {
     }
 
     syncDocument(shareDBDocument) {
-        this.synchronizer.syncDocument(shareDBDocument);
+        this.synchronizer.syncShareDBDocument(shareDBDocument);
     }
 
     eventHandlers = {};

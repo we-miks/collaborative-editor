@@ -90,15 +90,3 @@ let connection = new ShareDB.Connection(socket);
 let doc = connection.get("examples", "test-doc");
 
 editor.syncDocument(doc);
-
-function onBeforeToolbarImageUpload(file) {
-    editor.dispatchEvent("toolbarBeforeImageUpload", file);
-}
-
-function onToolbarImageUploadSuccess(response) {
-    editor.dispatchEvent("toolbarImageUploadSuccess", response.image_url);
-}
-
-function onToolbarImageUploadError(err) {
-    editor.dispatchEvent("toolbarImageUploadError", err);
-}

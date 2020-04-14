@@ -79,7 +79,7 @@ class Composition {
 
     setEditorContent(delta, source) {
         // Used to initialize editor content
-        this.editor.setContents(delta, source);
+        this.editor.quill.setContents(delta, source);
     }
 
     submitToEditor(delta, source) {
@@ -94,7 +94,7 @@ class Composition {
         this.addLocalFixingDelta(delta);
 
         if(!this.isComposing()) {
-            this.flush();
+            this.handleLocalDeltaMerge();
         }
     }
 
@@ -104,11 +104,9 @@ class Composition {
 
     handleLocalDeltaMerge(upstreamDelta, finalSubmittedDelta) {
 
-        this.logDelta("upstream", upstreamDelta);
-
         let localFixingDelta;
 
-        if(upstreamDelta.ops.length === 0) {
+        if(!upstreamDelta || upstreamDelta.ops.length === 0) {
 
             // No pending upstream changes.
             // Local pending delta is just a retain operation.
@@ -148,17 +146,11 @@ class Composition {
 
     handleSubmitDeltaMerge(upstreamDelta) {
 
-        this.logDelta("upstream", upstreamDelta);
-
         let pendingSubmitDelta = this.composeDeltas(this.pendingSubmitDeltas);
-        this.logDelta("pending submit", pendingSubmitDelta);
 
         let transformedPendingSubmitDelta = upstreamDelta.transform(pendingSubmitDelta, true);
-        this.logDelta("final submit", transformedPendingSubmitDelta);
-
 
         // Delta could be modified by event handlers
-        // TODO: Authorship should receive this event and add authorship info
         this.editor.dispatchEvent("beforeSubmitToUpstream", transformedPendingSubmitDelta);
 
         // Submit to synchronizer
@@ -188,14 +180,6 @@ class Composition {
         });
 
         return merged;
-    }
-
-    onCompositionEnd(handler) {
-        this.compositionEndEventHandlers.push(handler);
-    }
-
-    logDelta(msg, delta) {
-        console.log(msg + ": " + JSON.stringify(delta));
     }
 }
 
