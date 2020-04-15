@@ -33,7 +33,7 @@ class Synchronizer  {
 
             shareDBDocument.on('op', function(delta, source) {
 
-                if(source !== 'api')
+                if(source === 'user')
                     return;
 
                 self.composition.submitToEditor(delta);

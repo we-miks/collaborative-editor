@@ -3,11 +3,6 @@ import 'quill/dist/quill.snow.css'
 import ReconnectingWebSocket from "reconnecting-websocket";
 import ShareDB from "sharedb/lib/client";
 
-let author = {
-    id: 10,
-    name: 'Main Author'
-};
-
 let authors = [
     {
         id: 1,
@@ -15,27 +10,29 @@ let authors = [
     },
     {
         id: 2,
-        name: "User A"
+        name: "User B"
     },
     {
         id: 3,
-        name: "User A"
+        name: "User C"
     },
     {
         id: 4,
-        name: "User A"
+        name: "User D"
     },
     {
         id: 5,
-        name: "User A"
+        name: "User E"
     }
 ];
+
+let authorIndex = Math.ceil(Math.random() * 1000) % authors.length;
 
 let testUrl = 'https://yd.wemiks.com/banner-2d980584-yuanben.svg';
 
 let editorOptions = {
     authorship: {
-        author: author,
+        author: authors[authorIndex],
         authorColor: '#ed5634',
         colors: [
             "#f7b452",
@@ -52,7 +49,7 @@ let editorOptions = {
             getAuthorInfoById: (authorId) => {
                 return new Promise((resolve, reject) => {
 
-                    let author = authors[authorId];
+                    let author = authors.find((a) => a.id + '' === authorId);
 
                     if(author) {
                         resolve(author);
@@ -106,7 +103,7 @@ let quillOptions = {
 
 let editor = new Editor("#container", editorOptions, quillOptions);
 
-let websocketEndpoint = "ws://localhost:8080";
+let websocketEndpoint = "ws://127.0.0.1:8080";
 
 let socket = new ReconnectingWebSocket(websocketEndpoint);
 let connection = new ShareDB.Connection(socket);
