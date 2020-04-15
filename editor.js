@@ -7,17 +7,17 @@ import ImageHandlers from "./image-handlers";
 import Composition from "./composition";
 import shareDB from "sharedb/lib/client";
 import richText from "rich-text";
-shareDB.types.register(richText.type);
 import lodashObject from "lodash/fp/object";
 
 import QuillImageDropAndPaste from "quill-image-drop-and-paste";
 import ImagePlaceholder from "./blot/image-placeholder";
 import Synchronizer from "./synchronizer";
 
-Quill.register('modules/imageDropAndPaste', QuillImageDropAndPaste);
+shareDB.types.register(richText.type);
 
-Quill.register(ImagePlaceholder);
+Quill.register('modules/imageDropAndPaste', QuillImageDropAndPaste);
 Quill.register("modules/authorship", Authorship);
+Quill.register(ImagePlaceholder);
 
 // For icons of header value 3
 const icons = Quill.import('ui/icons');
