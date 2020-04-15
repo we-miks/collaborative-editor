@@ -59,10 +59,13 @@ When uploading images, there will be a placeholder showing the image (read from 
 the image is successfully uploaded, the image placeholder will be replaced with the uploaded one.
 
 There're 3 ways user might insert image into the editor: the toolbar button, drag'n'drop from file explorer,
-and copy'n'paste from other web pages or applications. Which are all taken good care of. The only thing left to do for
+and copy'n'paste from other web pages or applications, which are all taken good care of. The only thing left to do for
 the developers is to implement the uploading handler, uploads the image to the server and returns an image URL.
 
 ## Getting Started
+
+There's a demo included in this repo, to see it up and running and play with it yourself, follow the instructions
+in the [Development](./README.md#Development) section of this doc.
 
 ***Installation***
 
@@ -200,16 +203,16 @@ editor.syncDocument(doc);
 
 ## Development
 
+There's a demo included in this repository to load the editor,
+which could also be used to do the development. The demo is located under ```demo``` directory.
+
 Node modules should be installed first:
 
 ```bash
 $ npm install
 ```
 
-There's a demo included in this repository to load the editor,
-which could also be used to do the development. The demo is located under ```demo``` directory.
-
-First of all we need to start the server side websocket api so that our
+Then we need to start the server side websocket api so that our
 editor could connect to it and start running. A functional server side script
 is already included in the ```server``` directory.
 
@@ -219,7 +222,7 @@ $ node server/server.js
 
 Running above command will start the websocket server on port 9001.
 
-Then we could start the demo using webpack:
+Last step is to start the demo using webpack:
 
 ```bash
 $ npm start
