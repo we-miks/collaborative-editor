@@ -66,9 +66,9 @@ let editorOptions = {
     },
     image: {
         handlers: {
-            imageDataURIUpload: (file) => {
+            imageDataURIUpload: (dataURI) => {
 
-                console.log(file);
+                console.log(dataURI);
 
                 return new Promise((resolve) => {
                     resolve(testUrl);
