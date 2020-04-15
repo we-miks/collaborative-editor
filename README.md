@@ -27,9 +27,40 @@ ShareDB to be merged and saved.
 
 ### Authorship display
 
+In the collaborative editing context, we often want to see the author of a certain paragraph, a sentence or even a word
+to be displayed along with the text. In our implementation, the author's id is recorded inside the document as class
+attributes. As the user typing in, the author's id is added automatically.
+
+When there're more than 1 author inside the document, we will show a sidebar to display the author's name in a paragraph
+level. The author of a paragraph is decided by counting the number of characters that belongs to this author inside the
+paragraph.
+
+We do not show authors information in the sentence level. However, it could be easily implemented using CSS.
+
 ### Chinese/Japanese/Korean characters composition
 
-### Image placeholder
+For languages that requires composition such as Chinese, some temporary characters might be put into the editor by the
+composition tools during the composition process, at the end of the composition progress, the temp chars are deleted,
+and the real characters are inserted.
+
+In the collaboration environment, during a composition process, there might be changes from other clients that are
+pushed to our editor, and changes the html when applied. The modification of the html elements during a composition
+process will break the mutation records and lead to the editor producing wrong Deltas.
+
+We fix this issue by pausing the applying of deltas from upstream server and at the end of the composition process
+merge the pending upstream deltas with the real characters from composition.
+
+The temp characters during the composition process will not be uploaded to the server so that the modification history
+will not become a mess.
+
+### Image uploading placeholder
+
+When uploading images, there will be a placeholder showing the image (read from local file) and loading status. When
+the image is successfully uploaded, the image placeholder will be replaced with the uploaded one.
+
+There're 3 ways user might insert image into the editor: the toolbar button, drag'n'drop from file explorer,
+and copy'n'paste from other web pages or applications. Which are all taken good care of. The only thing left to do for
+the developers is to implement the uploading handler, uploads the image to the server and returns an image URL.
 
 ## Getting Started
 
