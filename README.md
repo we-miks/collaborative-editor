@@ -7,6 +7,24 @@ A collaborative editor that supports authorship display, image placeholder and C
 
 ### Operational transformation (OT)
 
+The document is represented by a collection of operations: ```insert```, ```delete``` and ```retain```.
+Each modification of the document can also be represented by a serials of OT operations. By doing so, it is easy to
+record all the modification history of a document, and to merge modifications from different collaborators into one.
+
+For a detailed explanation of OT, please refer to [this document](http://operational-transformation.github.io/).
+
+In our implementation, the document, which is a collection of OT operations, is stored on the server side using
+[ShareDB](https://github.com/share/sharedb), and served to the frontend using WebSocket API. ShareDB deals with
+the versioning of operations and handles the merging of them from different clients.
+
+[Quill](https://github.com/quilljs/quill) editor on the client side receives the operations,
+or [Delta](https://github.com/quilljs/delta) as it claims, and renders them into HTML using a virtual DOM like tech
+called [Parchment](https://github.com/quilljs/parchment), which transforms operations into a hierarchy of Blots that
+represent paragraphs, texts and images. The Blots are converted to HTML and inserted into the webpage in the end.
+
+Blots listen for the mutation records from the browser, and transforms the records into Delta. Quill sends the Delta to
+ShareDB to be merged and saved.
+
 ### Authorship display
 
 ### Chinese/Japanese/Korean characters composition
