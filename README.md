@@ -151,3 +151,31 @@ editor.syncDocument(doc);
 
 ## Development
 
+Node modules should be installed first:
+
+```bash
+$ npm install
+```
+
+There's a demo included in this repository to load the editor,
+which could also be used to do the development. The demo is located under ```demo``` directory.
+
+First of all we need to start the server side websocket api so that our
+editor could connect to it and start running. A functional server side script
+is already included in the ```server``` directory.
+
+```bash
+$ node server/server.js
+```
+
+Running above command will start the websocket server on port 9001.
+
+Then we could start the demo using webpack:
+
+```bash
+$ npm start
+```
+
+Now you should be able to see a webpage popup with a loaded editor.
+
+Don't hesitate! Submit your PR!
