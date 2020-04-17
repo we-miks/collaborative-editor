@@ -1,6 +1,6 @@
 {
   "name": "miks-collaborative-editor",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "description": "A collaborative editor that supports authorship display, image uploading placeholder and CJK characters composition based on Quill and ShareDB.",
   "main": "editor.js",
   "scripts": {
