@@ -28,6 +28,7 @@ class Editor {
     constructor(container, editorOptions, quillOptions) {
 
         this.options = editorOptions;
+        this.eventHandlers = {};
 
         this.imageHandlers = new ImageHandlers(this);
 
@@ -39,8 +40,6 @@ class Editor {
         this.composition.setSynchronizer(this.synchronizer);
 
         this.authorship = new Authorship(this, this.composition, editorOptions.authorship || {});
-
-        this.eventHandlers = {};
 
         // Add image upload toolbar button handler
         this.quill.getModule("toolbar").addHandler('image', this.imageHandlers.imageUploadButtonHandler);
