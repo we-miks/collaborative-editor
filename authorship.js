@@ -423,7 +423,7 @@ class AuthorSidebar {
         delta.ops.forEach((op) => {
             if(op.attributes && op.attributes.author) {
                 let authorId = op.attributes.author;
-                if(authorId !== self.author.out_uid && typeof(self.identifiedAuthorIds[authorId]) === 'undefined') {
+                if(authorId !== self.author.id && typeof(self.identifiedAuthorIds[authorId]) === 'undefined') {
                     // New author identified.
                     // Assign a color to this author.
                     self.identifiedAuthorIds[authorId] = self.identifiedAuthorCount++ % self.colors.length;
