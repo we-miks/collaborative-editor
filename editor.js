@@ -40,7 +40,7 @@ class Editor {
 
         this.authorship = new Authorship(this, this.composition, editorOptions.authorship || {});
 
-        let self = this;
+        this.eventHandlers = {};
 
         // Add image upload toolbar button handler
         this.quill.getModule("toolbar").addHandler('image', this.imageHandlers.imageUploadButtonHandler);
@@ -67,8 +67,6 @@ class Editor {
     syncDocument(shareDBDocument) {
         this.synchronizer.syncShareDBDocument(shareDBDocument);
     }
-
-    eventHandlers = {};
 
     on(event, handler) {
 
