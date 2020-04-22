@@ -93,8 +93,7 @@ class ImageHandlers {
 
                 if(self.isDataURI(src)) {
                     func = self.editor.options.image.handlers.imageDataURIUpload;
-                }
-                if(self.isImageSrc(src)) {
+                }else if(self.isImageSrc(src)) {
                     func = self.editor.options.image.handlers.imageSrcUpload;
                 } else {
                     // Local files
