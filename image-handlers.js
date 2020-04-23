@@ -1,4 +1,5 @@
 import Quill from "quill";
+import EditorEvents from "./editor-events";
 const Delta = Quill.import("delta");
 
 class ImageHandlers {
@@ -98,8 +99,8 @@ class ImageHandlers {
                 } else {
                     // Local files
                     // Browser has no access to local files
-                    // So remove this file and show a message to user
-                    self.error("有些图片无法自动上传，请尝试使用工具栏的上传按钮手工上传");
+                    // So skip this file and send a message to editor
+                    self.editor.dispatchEvent(EditorEvents.imageSkipped, src);
                     op.insert = "\n";
                 }
 
@@ -114,9 +115,10 @@ class ImageHandlers {
                                 (imageUrl) => {
                                     self.replaceImagePlaceholderWithImage(placeholderId, imageUrl);
                                 }).catch(
-                            (err) => {
-                                self.error(err);
-                            });
+                                    (err) => {
+                                        self.removeImagePlaceholder(placeholderId);
+                                        self.error(err);
+                                    });
 
                     }, 200);
 

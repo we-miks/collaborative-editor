@@ -2,6 +2,7 @@ import Editor from "../editor";
 import 'quill/dist/quill.snow.css'
 import ReconnectingWebSocket from "reconnecting-websocket";
 import ShareDB from "sharedb/lib/client";
+import EditorEvents from "../editor-events";
 
 let authors = [
     {
@@ -102,6 +103,10 @@ let quillOptions = {
 };
 
 let editor = new Editor("#container", editorOptions, quillOptions);
+
+editor.on(EditorEvents.imageSkipped, ()=>{
+    console.log("image skipped");
+});
 
 let websocketEndpoint = "ws://127.0.0.1:8080";
 

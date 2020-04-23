@@ -37,7 +37,7 @@ module.exports = {
         compress: false,
         host: "0.0.0.0",
         port: 9001,
-        openPage: 'demo.html'
+        openPage: 'http://127.0.0.1:9001/demo.html'
     },
     plugins: [
         new HtmlWebpackPlugin({
