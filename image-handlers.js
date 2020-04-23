@@ -191,12 +191,17 @@ class ImageHandlers {
     }
 
     replaceImagePlaceholderWithImage(placeholderId, imageSrc) {
-        let index = this.removeImagePlaceholder(placeholderId);
-        if(index !== -1) {
-            let dt = new Delta();
-            dt.retain(index).insert({image: imageSrc});
-            this.editor.quill.updateContents(dt, "user");
-        }
+
+        let self = this;
+
+        setTimeout(() => {
+            let index = self.removeImagePlaceholder(placeholderId);
+            if(index !== -1) {
+                let dt = new Delta();
+                dt.retain(index).insert({image: imageSrc});
+                self.editor.quill.updateContents(dt, "user");
+            }
+        }, 1000);
     }
 
     isDataURI(src) {
