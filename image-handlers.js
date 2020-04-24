@@ -169,10 +169,17 @@ class ImageHandlers {
         let placeholderDomNode = document.getElementById("image-placeholder-" + id);
 
         if(placeholderDomNode) {
+
+            // save selection
+            let range = this.editor.quill.getSelection();
+
             let placeholderBlot = Quill.find(placeholderDomNode);
             let placeholderIndex = this.editor.quill.getIndex(placeholderBlot);
             let deleteDelta = new Delta().retain(placeholderIndex).delete(1);
             this.editor.quill.updateContents(deleteDelta, "user");
+
+            // restore selection
+            this.editor.quill.setSelection(range.index, range.length, "silent");
 
             return placeholderIndex;
         } else {
@@ -197,9 +204,16 @@ class ImageHandlers {
         setTimeout(() => {
             let index = self.removeImagePlaceholder(placeholderId);
             if(index !== -1) {
+
+                // save selection
+                let range = self.editor.quill.getSelection();
+
                 let dt = new Delta();
                 dt.retain(index).insert({image: imageSrc});
                 self.editor.quill.updateContents(dt, "user");
+
+                // restore selection
+                self.editor.quill.setSelection(range.index, range.length, "silent");
             }
         }, 1000);
     }
