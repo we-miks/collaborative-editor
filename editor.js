@@ -16,7 +16,6 @@ import Synchronizer from "./synchronizer";
 shareDB.types.register(richText.type);
 
 Quill.register('modules/imageDropAndPaste', QuillImageDropAndPaste);
-Quill.register("modules/authorship", Authorship);
 Quill.register(ImagePlaceholder);
 
 // For icons of header value 3
@@ -63,8 +62,8 @@ class Editor {
         });
     }
 
-    syncDocument(shareDBDocument) {
-        this.synchronizer.syncShareDBDocument(shareDBDocument);
+    syncThroughWebsocket(endpoint, collection, docId) {
+        return this.synchronizer.syncThroughWebsocket(endpoint, collection, docId);
     }
 
     on(event, handler) {
@@ -93,6 +92,11 @@ class Editor {
                 handler(payload);
             });
         }
+    }
+
+    close() {
+        this.eventHandlers = {};
+        this.synchronizer.close();
     }
 }
 

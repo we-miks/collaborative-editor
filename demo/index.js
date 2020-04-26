@@ -1,7 +1,5 @@
 import Editor from "../editor";
 import 'quill/dist/quill.snow.css'
-import ReconnectingWebSocket from "reconnecting-websocket";
-import ShareDB from "sharedb/lib/client";
 import EditorEvents from "../editor-events";
 
 let authors = [
@@ -110,8 +108,4 @@ editor.on(EditorEvents.imageSkipped, ()=>{
 
 let websocketEndpoint = "ws://127.0.0.1:8080";
 
-let socket = new ReconnectingWebSocket(websocketEndpoint);
-let connection = new ShareDB.Connection(socket);
-let doc = connection.get("examples", "test-doc");
-
-editor.syncDocument(doc);
+editor.syncThroughWebsocket(websocketEndpoint, "examples", "test-doc");

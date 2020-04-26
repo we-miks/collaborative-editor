@@ -308,6 +308,10 @@ class AuthorSidebar {
                 current = current.next;
             }
 
+            if(maxLengthAuthor === 0) {
+                return;
+            }
+
             // Update author's name inside sidebar item
             let lineAuthorId = maxLengthAuthor;
             let self = this;
