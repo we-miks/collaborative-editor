@@ -66,6 +66,9 @@ class Synchronizer  {
                 if(source === 'user')
                     return;
 
+                if(!delta.ops || delta.ops.length === 0)
+                    return;
+
                 self.composition.submitToEditor(delta);
             });
 
