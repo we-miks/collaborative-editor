@@ -12,11 +12,13 @@ import lodashObject from "lodash/fp/object";
 import QuillImageDropAndPaste from "quill-image-drop-and-paste";
 import ImagePlaceholder from "./blot/image-placeholder";
 import Synchronizer from "./synchronizer";
+import History from "./modules/history";
 
 shareDB.types.register(richText.type);
 
 Quill.register('modules/imageDropAndPaste', QuillImageDropAndPaste);
 Quill.register(ImagePlaceholder);
+Quill.register("modules/history", History);
 
 // For icons of header value 3
 const icons = Quill.import('ui/icons');

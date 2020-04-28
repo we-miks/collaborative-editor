@@ -79,6 +79,9 @@ class Synchronizer  {
                 self.close();
                 self.editor.dispatchEvent(EditorEvents.documentDeleted, shareDBDocument);
             });
+
+            // Initialize history recording
+            self.editor.quill.getModule("history").init(self.editor);
         });
     }
 

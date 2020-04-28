@@ -8,7 +8,7 @@ class Composition {
         this.editor = editor;
         this.quill = editor.quill;
         this.synchronizer = null;
-        this.compositionStatus = false;
+        this.compositionInProgress = false;
 
         let self = this;
 
@@ -17,13 +17,16 @@ class Composition {
 
         this.latestCompositionEndTicket = null;
 
+        let compositionStatus = false;
+
         this.quill.root.addEventListener("compositionstart", function(){
-            self.compositionStatus = true;
+            compositionStatus = true;
+            self.compositionInProgress = true;
         });
 
         this.quill.root.addEventListener("compositionend", function(event){
 
-            self.compositionStatus = false;
+            compositionStatus = false;
 
             let ticket = event.timeStamp;
             self.latestCompositionEndTicket = ticket;
@@ -33,16 +36,17 @@ class Composition {
                 // Handle cases where composition start happens right after a composition end
                 // when user chooses a character using number keys.
 
-                if(self.isComposing() || ticket !== self.latestCompositionEndTicket) {
+                if(compositionStatus || ticket !== self.latestCompositionEndTicket) {
                     return;
                 }
+
+                self.compositionInProgress = false;
 
                 self.flush();
 
             }, 400);
         });
 
-        this.oldDelta = null;
         this.quill.on('text-change', function(delta, oldDelta, source) {
 
             if(source !== 'user')
@@ -61,19 +65,32 @@ class Composition {
         let upstreamDelta = this.composeDeltas(this.upstreamPendingDeltas);
         let finalSubmittedDelta = this.handleSubmitDeltaMerge(upstreamDelta);
 
-        if(!oldDelta) {
-            oldDelta = this.editor.quill.getContents();
-        }
-
         this.handleLocalDeltaMerge(upstreamDelta, finalSubmittedDelta);
 
         this.upstreamPendingDeltas.length = 0;
         this.pendingSubmitDeltas.length = 0;
 
-        // oldDelta is before composition, finalSubmittedDelta does not include composition process
-        // oldDelta and delta is consistent
+        let changeDelta = upstreamDelta.compose(finalSubmittedDelta);
 
-        this.editor.dispatchEvent(EditorEvents.editorTextChanged, {delta: upstreamDelta.compose(finalSubmittedDelta), oldDelta: oldDelta});
+        if(!oldDelta) {
+
+            let currentDoc = this.editor.quill.getContents();
+            let revertDelta = new Delta();
+
+            changeDelta.ops.forEach((op) => {
+                if(op.retain) {
+                    revertDelta.retain(op.retain);
+                } else if (op.insert) {
+                    revertDelta.delete(op.insert.length);
+                } else {
+                    console.log("unsupported operation");
+                }
+            });
+
+            oldDelta = currentDoc.compose(revertDelta);
+        }
+
+        this.editor.dispatchEvent(EditorEvents.editorTextChanged, {delta: changeDelta, oldDelta: oldDelta});
     }
 
     submitToUpstream(delta, oldDelta) {
@@ -115,7 +132,7 @@ class Composition {
     }
 
     isComposing() {
-        return this.compositionStatus;
+        return this.compositionInProgress;
     }
 
     handleLocalDeltaMerge(upstreamDelta, finalSubmittedDelta) {

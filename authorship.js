@@ -35,6 +35,14 @@ class Authorship {
         this.editor.on(EditorEvents.editorTextChanged, ({delta, oldDelta}) => {
             self.authorSidebar.update(delta, oldDelta);
         });
+
+        this.editor.on(EditorEvents.undo, ({delta, oldDelta}) => {
+            self.authorSidebar.update(delta, oldDelta);
+        });
+
+        this.editor.on(EditorEvents.redo, ({delta, oldDelta}) => {
+            self.authorSidebar.update(delta, oldDelta);
+        });
     }
 
     applyLocalFixingDelta(delta) {
