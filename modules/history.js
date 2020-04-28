@@ -60,9 +60,6 @@ class History {
 
     record(changeDelta, oldDelta) {
 
-        console.log("change delta: " + JSON.stringify(changeDelta.ops));
-        console.log("old delta: " + JSON.stringify(oldDelta.ops));
-
         if (changeDelta.ops.length === 0) return;
         this.stack.redo = [];
         let undoDelta = this.quill.getContents().diff(oldDelta);
@@ -81,8 +78,6 @@ class History {
         if (this.stack.undo.length > this.options.maxStack) {
             this.stack.undo.shift();
         }
-
-        console.log(this.stack);
     }
 
     redo() {
