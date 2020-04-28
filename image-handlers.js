@@ -21,14 +21,7 @@ class ImageHandlers {
 
         this.editor.options.image.handlers.imageDataURIUpload(imageDataUrl, type)
             .then((imageUrl) => {
-
-                let index = self.removeImagePlaceholder(placeholderId);
-
-                if(index !== -1) {
-                    let delta = new Delta().retain(index).insert({image: imageUrl});
-                    self.editor.quill.updateContents(delta, "user");
-                }
-
+                self.replaceImagePlaceholderWithImage(placeholderId, imageUrl);
             })
             .catch((err) => {
                 self.removeImagePlaceholder(placeholderId);
@@ -64,6 +57,7 @@ class ImageHandlers {
                             self.replaceImagePlaceholderWithImage(toolbarPlaceholderId, imageUrl);
                         })
                         .catch((err) => {
+                            self.removeImagePlaceholder(toolbarPlaceholderId);
                             self.error(err);
                         });
 
@@ -115,10 +109,10 @@ class ImageHandlers {
                                 (imageUrl) => {
                                     self.replaceImagePlaceholderWithImage(placeholderId, imageUrl);
                                 }).catch(
-                                    (err) => {
-                                        self.removeImagePlaceholder(placeholderId);
-                                        self.error(err);
-                                    });
+                            (err) => {
+                                self.removeImagePlaceholder(placeholderId);
+                                self.error(err);
+                            });
 
                     }, 200);
 
@@ -204,16 +198,17 @@ class ImageHandlers {
         setTimeout(() => {
             let index = self.removeImagePlaceholder(placeholderId);
             if(index !== -1) {
+                setTimeout(() => {
+                    // save selection
+                    let range = self.editor.quill.getSelection();
 
-                // save selection
-                let range = self.editor.quill.getSelection();
+                    let dt = new Delta();
+                    dt.retain(index).insert({image: imageSrc});
+                    self.editor.quill.updateContents(dt, "user");
 
-                let dt = new Delta();
-                dt.retain(index).insert({image: imageSrc});
-                self.editor.quill.updateContents(dt, "user");
-
-                // restore selection
-                self.editor.quill.setSelection(range.index, range.length, "silent");
+                    // restore selection
+                    self.editor.quill.setSelection(range.index, range.length, "silent");
+                }, 100);
             }
         }, 1000);
     }
