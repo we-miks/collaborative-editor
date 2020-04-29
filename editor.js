@@ -13,12 +13,14 @@ import QuillImageDropAndPaste from "quill-image-drop-and-paste";
 import ImagePlaceholder from "./blot/image-placeholder";
 import Synchronizer from "./synchronizer";
 import History from "./modules/history";
+import MiksClipboard from "./modules/miks-clipboard";
 
 shareDB.types.register(richText.type);
 
 Quill.register('modules/imageDropAndPaste', QuillImageDropAndPaste);
 Quill.register(ImagePlaceholder);
 Quill.register("modules/history", History);
+Quill.register("modules/clipboard", MiksClipboard);
 
 // For icons of header value 3
 const icons = Quill.import('ui/icons');
@@ -44,6 +46,9 @@ class Editor {
 
         // Add image upload toolbar button handler
         this.quill.getModule("toolbar").addHandler('image', this.imageHandlers.imageUploadButtonHandler);
+
+        // Initialize clipboard module
+        this.quill.getModule("clipboard").setEditor(this);
     }
 
     mergeQuillOptions(options) {
@@ -54,18 +59,18 @@ class Editor {
             modules: {
                 imageDropAndPaste: {
                     handler: self.imageHandlers.imageDropAndPasteHandler
-                },
-                clipboard: {
-                    matchers: [
-                        ['img', self.imageHandlers.clipboardMatchImageHandler]
-                    ]
                 }
             }
         });
     }
 
     syncThroughWebsocket(endpoint, collection, docId) {
+        this.composition.clear();
         return this.synchronizer.syncThroughWebsocket(endpoint, collection, docId);
+    }
+
+    getEditorContents() {
+        return this.composition.getEditorContents();
     }
 
     on(event, handler) {

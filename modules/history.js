@@ -38,7 +38,7 @@ class History {
         this.stack[dest].push(delta);
         this.lastRecorded = 0;
 
-        let oldDelta = this.quill.getContents();
+        let oldDelta = this.editor.getEditorContents();
 
         this.editor.composition.submitLocalFixingDelta(delta[source]);
         this.editor.synchronizer.submitDeltaToUpstream(delta[source]);
@@ -62,7 +62,7 @@ class History {
 
         if (changeDelta.ops.length === 0) return;
         this.stack.redo = [];
-        let undoDelta = this.quill.getContents().diff(oldDelta);
+        let undoDelta = this.editor.getEditorContents().diff(oldDelta);
         let timestamp = Date.now();
         if (this.lastRecorded + this.options.delay > timestamp && this.stack.undo.length > 0) {
             let delta = this.stack.undo.pop();

@@ -15,6 +15,8 @@ class Composition {
         this.upstreamPendingDeltas = [];
         this.pendingSubmitDeltas = [];
 
+        this.clear();
+
         this.latestCompositionEndTicket = null;
 
         let compositionStatus = false;
@@ -47,14 +49,31 @@ class Composition {
             }, 400);
         });
 
+        // Text change should only be processed by Composition and then send to others by our own event system.
         this.quill.on('text-change', function(delta, oldDelta, source) {
 
             if(source !== 'user')
                 return;
 
-            // Text change should only be processed by Composition and then send to others by our own event system.
-            self.submitToUpstream(delta, oldDelta);
+            let convertedDelta = self.localOnlyDelta.revert.transform(delta);
+            let convertedOldDelta = oldDelta.compose(self.localOnlyDelta.revert);
+
+            self.submitToUpstream(convertedDelta, convertedOldDelta);
+            self.transformLocalOnlyDelta(delta);
         });
+    }
+
+    clear() {
+        this.localOnlyDelta = {
+            change: new Delta(),
+            revert: new Delta(),
+            steps: []
+        };
+    }
+
+    getEditorContents() {
+        let delta = this.quill.getContents();
+        return delta.compose(this.localOnlyDelta.revert);
     }
 
     setSynchronizer(synchronizer) {
@@ -74,7 +93,7 @@ class Composition {
 
         if(!oldDelta) {
 
-            let currentDoc = this.editor.quill.getContents();
+            let currentDoc = this.getEditorContents();
             let revertDelta = new Delta();
 
             changeDelta.ops.forEach((op) => {
@@ -94,6 +113,7 @@ class Composition {
     }
 
     submitToUpstream(delta, oldDelta) {
+
         this.addPendingSubmitDelta(delta);
 
         if(!this.isComposing()) {
@@ -101,21 +121,22 @@ class Composition {
         }
     }
 
+    /**
+     * Initialize editor content
+     * @param delta
+     * @param source
+     */
     setEditorContent(delta, source) {
-
-        // Used to initialize editor content
-        let oldDelta = this.editor.quill.getContents();
-
+        this.clear();
         this.editor.quill.setContents(delta, source);
-
-        this.editor.dispatchEvent(EditorEvents.editorTextChanged, {delta: delta, oldDelta: oldDelta});
+        this.editor.dispatchEvent(EditorEvents.editorTextChanged, {delta: delta, oldDelta: new Delta().insert("\n")});
     }
 
-    submitToEditor(delta, oldDelta) {
+    submitToEditor(delta) {
         this.addUpstreamPendingDelta(delta);
 
         if(!this.isComposing()) {
-            this.flush(oldDelta);
+            this.flush();
         }
     }
 
@@ -128,7 +149,7 @@ class Composition {
      * @param delta
      */
     submitLocalFixingDelta(delta) {
-        this.editor.quill.updateContents(delta, "silent");
+        this.updateQuill(delta, "silent");
     }
 
     isComposing() {
@@ -165,7 +186,7 @@ class Composition {
 
             let localFixingDelta = upstreamDelta.compose(finalSubmittedDelta).compose(revertOp);
 
-            this.quill.updateContents(localFixingDelta, "silent");
+            this.updateQuill(localFixingDelta, "silent");
         }
     }
 
@@ -190,6 +211,71 @@ class Composition {
 
     addPendingSubmitDelta(delta) {
         this.pendingSubmitDeltas.push(delta);
+    }
+
+    /**
+     * Add local only delta
+     * local only delta is applied to the local editor only and will never be submitted to the server
+     * if there're local only delta applied to the editor, the upstream delta should be transformed by the changeDelta
+     * before applied to the editor. the local changes delta should be transformed by revertDelta before submitted to
+     * the upstream server.
+     */
+    addLocalOnlyDelta(changeDelta, revertDelta) {
+
+        let id = Math.ceil(Math.random() * 100000);
+
+        this.localOnlyDelta.steps.push({
+            id: id,
+            change: changeDelta,
+            revert: revertDelta
+        })
+
+        this.updateQuill(changeDelta, "silent");
+
+        this.updateLocalOnlyDelta();
+        return id;
+    }
+
+    removeLocalOnlyDelta(id) {
+
+        let idx = this.localOnlyDelta.steps.findIndex((element) => {return element.id === id});
+
+        if(idx !== -1) {
+            let step = this.localOnlyDelta.steps.splice(idx, 1);
+
+            this.quill.updateContents(step[0].revert, "silent");
+
+            this.updateLocalOnlyDelta();
+
+            return step[0];
+        } else {
+            return null;
+        }
+    }
+
+    transformLocalOnlyDelta(delta) {
+        this.localOnlyDelta.steps.forEach((step) => {
+            step.change = delta.transform(step.change);
+            step.revert = delta.transform(step.revert);
+        })
+
+        this.updateLocalOnlyDelta();
+    }
+
+    updateLocalOnlyDelta() {
+        this.localOnlyDelta.change = new Delta();
+        this.localOnlyDelta.revert = new Delta();
+        for(let step of this.localOnlyDelta.steps) {
+            this.localOnlyDelta.change = this.localOnlyDelta.change.compose(step.change);
+            this.localOnlyDelta.revert = this.localOnlyDelta.revert.compose(step.revert);
+        }
+    }
+
+    updateQuill(delta, source) {
+        let convertedDelta = this.localOnlyDelta.change.transform(delta);
+        this.quill.updateContents(convertedDelta, source);
+
+        this.transformLocalOnlyDelta(convertedDelta);
     }
 
     composeDeltas(deltaArray) {

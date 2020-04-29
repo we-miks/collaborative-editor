@@ -64,15 +64,11 @@ let editorOptions = {
         handlers: {
             imageDataURIUpload: (dataURI) => {
 
-                console.log(dataURI);
-
                 return new Promise((resolve) => {
                     resolve(testUrl);
                 });
             },
             imageSrcUpload: (src) => {
-
-                console.log(src);
 
                 return new Promise((resolve) => {
                     resolve(testUrl);

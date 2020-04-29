@@ -1,5 +1,4 @@
 import Quill from "quill";
-import EditorEvents from "./editor-events";
 const Delta = Quill.import("delta");
 
 class ImageHandlers {
@@ -8,23 +7,22 @@ class ImageHandlers {
 
         this.imageUploadButtonHandler = this.imageUploadButtonHandler.bind(this);
         this.imageDropAndPasteHandler = this.imageDropAndPasteHandler.bind(this);
-        this.clipboardMatchImageHandler = this.clipboardMatchImageHandler.bind(this);
     }
 
     imageDropAndPasteHandler(imageDataUrl, type) {
 
         let placeholderId = Math.ceil(Math.random() * 1000000);
-        this.insertImagePlaceholder(placeholderId);
+        let deltaId = this.insertImagePlaceholder(placeholderId);
         this.previewInImagePlaceholder(placeholderId, imageDataUrl);
 
         let self = this;
 
         this.editor.options.image.handlers.imageDataURIUpload(imageDataUrl, type)
             .then((imageUrl) => {
-                self.replaceImagePlaceholderWithImage(placeholderId, imageUrl);
+                self.replaceImagePlaceholderWithImage(placeholderId, deltaId, imageUrl);
             })
             .catch((err) => {
-                self.removeImagePlaceholder(placeholderId);
+                self.removeImagePlaceholder(placeholderId, deltaId);
                 self.error(err);
             });
     }
@@ -43,10 +41,10 @@ class ImageHandlers {
                 return;
             }
 
-            // Insert image placeholder
-
             let toolbarPlaceholderId = Math.ceil(Math.random() * 1000000);
-            self.insertImagePlaceholder(toolbarPlaceholderId);
+
+            // Insert image placeholder
+            let deltaId = self.insertImagePlaceholder(toolbarPlaceholderId);
 
             self.readFileAsDataURI(files[0])
                 .then((dataURI) => {
@@ -54,10 +52,10 @@ class ImageHandlers {
 
                     self.editor.options.image.handlers.imageDataURIUpload(dataURI)
                         .then((imageUrl) => {
-                            self.replaceImagePlaceholderWithImage(toolbarPlaceholderId, imageUrl);
+                            self.replaceImagePlaceholderWithImage(toolbarPlaceholderId, deltaId, imageUrl);
                         })
                         .catch((err) => {
-                            self.removeImagePlaceholder(toolbarPlaceholderId);
+                            self.removeImagePlaceholder(toolbarPlaceholderId, deltaId);
                             self.error(err);
                         });
 
@@ -71,114 +69,67 @@ class ImageHandlers {
         fileInput.click();
     }
 
-    clipboardMatchImageHandler(node, delta) {
+    insertImagePlaceholder(id, index) {
 
-        // node is the img element
-        // delta is the inserting op for image
+        let range;
 
-        let self = this;
+        if(!index) {
+            range = this.editor.quill.getSelection();
+            index = range.index;
+        }
 
-        delta.ops.forEach((op) => {
-
-            // Upload image and replace image url
-            if(op.insert && op.insert.image) {
-                let src = op.insert.image;
-
-                let func;
-
-                if(self.isDataURI(src)) {
-                    func = self.editor.options.image.handlers.imageDataURIUpload;
-                }else if(self.isImageSrc(src)) {
-                    func = self.editor.options.image.handlers.imageSrcUpload;
-                } else {
-                    // Local files
-                    // Browser has no access to local files
-                    // So skip this file and send a message to editor
-                    self.editor.dispatchEvent(EditorEvents.imageSkipped, src);
-                    op.insert = "\n";
-                }
-
-                if(func) {
-                    let placeholderId = Math.ceil(Math.random() * 1000000);
-
-                    setTimeout(() => {
-                        self.previewInImagePlaceholder(placeholderId, src);
-
-                        func(src)
-                            .then(
-                                (imageUrl) => {
-                                    self.replaceImagePlaceholderWithImage(placeholderId, imageUrl);
-                                }).catch(
-                            (err) => {
-                                self.removeImagePlaceholder(placeholderId);
-                                self.error(err);
-                            });
-
-                    }, 200);
-
-                    delete op.insert.image;
-                    op.insert.imagePlaceholder = placeholderId;
-                }
-            }
-
-            // Remove image attributes
-            op.attributes = {};
-        });
-
-        return delta;
-    }
-
-    insertImagePlaceholder(id) {
-        let range = this.editor.quill.getSelection();
-
-        let [line, offset] = this.editor.quill.getLine(range.index);
+        let [line, offset] = this.editor.quill.getLine(index);
 
         let lineLength = line.length();
 
-        let delta = new Delta().retain(range.index);
+        let userDelta = new Delta().retain(index);
+        let placeholderDelta = new Delta().retain(index);
+        let placeholderRevertDelta = new Delta().retain(index);
 
         if(offset !== 0) {
             // Non-empty line.
             // Insert image after text.
             // A line break must be put before image.
-            delta = delta.insert("\n");
+            userDelta = userDelta.insert("\n");
+            placeholderDelta = placeholderDelta.retain(1);
+            placeholderRevertDelta = placeholderRevertDelta.retain(1);
         }
 
-        delta.insert({ imagePlaceholder: id});
+        // Add placeholder
+
+        placeholderDelta = placeholderDelta.insert({ imagePlaceholder: id});
+        placeholderRevertDelta = placeholderRevertDelta.delete(1);
 
         if(lineLength !== offset + 1) {
-            delta = delta.insert("\n");
+            userDelta = userDelta.insert("\n");
         }
 
-        if(range.length !== 0) {
-            delta = delta.delete(range.length);
+        if(range && range.length !== 0) {
+            userDelta = userDelta.delete(range.length);
         }
 
-        this.editor.quill.updateContents(delta, "user");
-        this.editor.quill.setSelection(range.index + 1);
+        this.editor.composition.updateQuill(userDelta, "user");
+
+        let localDeltaId = this.editor.composition.addLocalOnlyDelta(placeholderDelta, placeholderRevertDelta);
+
+        if(range) {
+            this.editor.quill.setSelection(range.index + 1);
+        }
+
+        return localDeltaId;
     }
 
-    removeImagePlaceholder(id) {
-        // Find image placeholder, delete it and insert a new image
-        let placeholderDomNode = document.getElementById("image-placeholder-" + id);
+    removeImagePlaceholder(placeholderId, deltaId) {
 
-        if(placeholderDomNode) {
+        // save selection
+        let range = this.editor.quill.getSelection();
 
-            // save selection
-            let range = this.editor.quill.getSelection();
+        let step = this.editor.composition.removeLocalOnlyDelta(deltaId);
 
-            let placeholderBlot = Quill.find(placeholderDomNode);
-            let placeholderIndex = this.editor.quill.getIndex(placeholderBlot);
-            let deleteDelta = new Delta().retain(placeholderIndex).delete(1);
-            this.editor.quill.updateContents(deleteDelta, "user");
+        // restore selection
+        this.editor.quill.setSelection(range.index, range.length, "silent");
 
-            // restore selection
-            this.editor.quill.setSelection(range.index, range.length, "silent");
-
-            return placeholderIndex;
-        } else {
-            return -1;
-        }
+        return step.change;
     }
 
     previewInImagePlaceholder(id, src) {
@@ -186,30 +137,51 @@ class ImageHandlers {
 
         if(placeholderDomNode) {
             let img = document.createElement('img');
-            placeholderDomNode.appendChild(img);
+
+            img.onload = () => {
+                placeholderDomNode.appendChild(img);
+            };
+
             img.src = src;
         }
     }
 
-    replaceImagePlaceholderWithImage(placeholderId, imageSrc) {
+    replaceImagePlaceholderWithImage(placeholderId, deltaId, imageSrc) {
 
         let self = this;
 
         setTimeout(() => {
-            let index = self.removeImagePlaceholder(placeholderId);
-            if(index !== -1) {
+            // preload image before add to editor
+            let img = new Image();
+
+            img.onload = () => {
+                let changeDelta = self.removeImagePlaceholder(placeholderId, deltaId);
+
                 setTimeout(() => {
+
                     // save selection
                     let range = self.editor.quill.getSelection();
 
-                    let dt = new Delta();
-                    dt.retain(index).insert({image: imageSrc});
-                    self.editor.quill.updateContents(dt, "user");
+                    for(let i=0; i<changeDelta.ops.length; i++) {
+                        let op = changeDelta.ops[i];
+                        if(op.insert && op.insert.imagePlaceholder) {
+                            op.insert = {image: imageSrc};
+                        }
+                    }
+
+                    self.editor.composition.updateQuill(changeDelta, "user");
 
                     // restore selection
                     self.editor.quill.setSelection(range.index, range.length, "silent");
-                }, 100);
-            }
+
+                }, 1);
+            };
+
+            img.onerror = () => {
+                self.removeImagePlaceholder(placeholderId, deltaId);
+            };
+
+            img.src = imageSrc;
         }, 1000);
     }
 
@@ -218,7 +190,7 @@ class ImageHandlers {
     }
 
     isImageSrc(src) {
-        return /^https?/.test(src);
+        return /^https?|^\/\//.test(src);
     }
 
     error(err) {

@@ -17,17 +17,41 @@
 .image-placeholder .image-mask .loading {
     display: block;
     position: absolute;
-    width: 100px;
-    height: 100px;
+    width: 80px;
+    height: 80px;
     text-align: center;
     left: 50%;
-    margin-left: -50px;
+    margin-left: -40px;
     top: 50%;
-    margin-top: -50px;
+    margin-top: -40px;
 }
-.image-placeholder .image-mask .loading i {
+.image-placeholder .image-mask .loading {
     color: #fff;
     font-size: 50px;
     font-style: normal;
-    line-height: 100px;
+    line-height: 68px;
 }
+.image-placeholder .image-mask .loading .ring {
+    display: inline-block;
+    width: 80px;
+    height: 80px;
+}
+.image-placeholder .image-mask .loading .ring:after {
+    content: " ";
+    display: block;
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    border: 6px solid #fff;
+    border-color: #fff transparent #fff transparent;
+    animation: loading-ring 1.2s linear infinite;
+}
+@keyframes loading-ring {
+    0% {
+        transform: rotate(0deg);
+    }
+    100% {
+        transform: rotate(360deg);
+    }
+}
+

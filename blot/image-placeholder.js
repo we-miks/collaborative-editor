@@ -14,7 +14,7 @@ class ImagePlaceholder extends Parchment.Embed {
         imgMask.className = "image-mask";
         node.appendChild(imgMask);
 
-        imgMask.innerHTML = '<span class="loading"><i class="el-icon-loading"></i></span>';
+        imgMask.innerHTML = '<span class="loading"><span class="ring"></span></span>';
 
         return node;
     }
