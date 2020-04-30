@@ -18,10 +18,7 @@ class History {
             this.editor = editor;
             this.editor.on(EditorEvents.editorTextChanged, ({delta, oldDelta}) => {
                 let self = this;
-                // Wait for local fixing delta to be applied in this cycle before get quill content in record function.
-                setTimeout(() => {
-                    self.record(delta, oldDelta);
-                }, 1);
+                self.record(delta, oldDelta);
             });
 
             this.quill.keyboard.addBinding({ key: 'Z', shortKey: true }, this.undo.bind(this));
@@ -62,7 +59,9 @@ class History {
 
         if (changeDelta.ops.length === 0) return;
         this.stack.redo = [];
-        let undoDelta = this.editor.getEditorContents().diff(oldDelta);
+
+        let editorContents = this.editor.getEditorContents();
+        let undoDelta = editorContents.diff(oldDelta);
         let timestamp = Date.now();
         if (this.lastRecorded + this.options.delay > timestamp && this.stack.undo.length > 0) {
             let delta = this.stack.undo.pop();

@@ -130,15 +130,18 @@ class ImageHandlers {
                     }
                 }
 
-                if(appliedDeltas && appliedDeltas.length !== 0) {
+                if(typeof(appliedDeltas) !== 'undefined') {
+                    if(appliedDeltas && appliedDeltas.length !== 0) {
 
-                    let composedAppliedDelta = new Delta();
+                        let composedAppliedDelta = new Delta();
 
-                    appliedDeltas.forEach((delta) => {
-                        composedAppliedDelta = composedAppliedDelta.compose(delta);
-                    });
+                        appliedDeltas.forEach((delta) => {
+                            composedAppliedDelta = composedAppliedDelta.compose(delta);
+                        });
 
-                    changeDelta = composedAppliedDelta.transform(changeDelta);
+                        changeDelta = composedAppliedDelta.transform(changeDelta);
+                    }
+
                     appliedDeltas.push(changeDelta);
                 }
 
