@@ -19,56 +19,55 @@ class MiksClipboard extends Clipboard {
         this.container.focus();
         this.quill.selection.update(Quill.sources.SILENT);
 
+        let appliedDeltas = [];
+
+        // selected text should be deleted first
+        if(range.length !== 0) {
+            let delta = new Delta().retain(range.index).delete(range.length);
+            this.quill.updateContents(delta, "user");
+        }
+
+        let self = this;
+
         setTimeout(() => {
-            // selected text should be deleted first
-            if(range.length !== 0) {
-                let delta = new Delta().retain(range.index).delete(range.length);
-                this.quill.updateContents(delta, "user");
-            }
 
-            let self = this;
+            let delta = new Delta().retain(range.index);
+            delta = delta.concat(this.convert());
 
-            setTimeout(() => {
+            let index = 0;
 
-                let delta = new Delta().retain(range.index);
-                delta = delta.concat(this.convert());
+            delta.ops.forEach((op) => {
+                if(op.retain) {
+                    index = index + op.retain;
+                } else if (op.insert) {
+                    if(typeof(op.insert) === 'string') {
+                        index = index + op.insert.length;
+                    }else if(op.insert.image) {
 
-                let index = 0;
+                        let src = op.insert.image;
+                        let imgIdx = index;
 
-                delta.ops.forEach((op) => {
-                    if(op.retain) {
-                        index = index + op.retain;
-                    } else if (op.insert) {
-                        if(typeof(op.insert) === 'string') {
-                            index = index + op.insert.length;
-                        }else if(op.insert.image) {
+                        setTimeout(() => {
+                            self.insertImageAtIndex(imgIdx, src, appliedDeltas);
+                        }, 1);
 
-                            let src = op.insert.image;
-                            let imgIdx = index;
-
-                            setTimeout(() => {
-                                self.insertImageAtIndex(imgIdx, src);
-                            }, 1);
-
-                            op.insert = "\n";
-
-                            index = index + 1;
-                        } else {
-                            index = index + 1;
-                        }
+                        delete op.attributes;
+                        op.insert = "";
+                    } else {
+                        index = index + 1;
                     }
-                });
+                }
+            });
 
-                this.editor.composition.updateQuill(delta, Quill.sources.USER);
+            this.editor.quill.updateContents(delta, Quill.sources.USER);
 
-                this.quill.setSelection(delta.length() - range.length, Quill.sources.SILENT);
-                this.quill.scrollingContainer.scrollTop = scrollTop;
-                this.quill.focus();
-            }, 1);
+            this.quill.setSelection(delta.length() - range.length, Quill.sources.SILENT);
+            this.quill.scrollingContainer.scrollTop = scrollTop;
+            this.quill.focus();
         }, 1);
     }
 
-    insertImageAtIndex(index, src) {
+    insertImageAtIndex(index, src, appliedDeltas) {
 
         let func;
         let imageHandlers = this.editor.imageHandlers;
@@ -96,14 +95,14 @@ class MiksClipboard extends Clipboard {
                 func(src)
                     .then(
                         (imageUrl) => {
-                            imageHandlers.replaceImagePlaceholderWithImage(placeholderId, deltaId, imageUrl);
+                            imageHandlers.replaceImagePlaceholderWithImage(placeholderId, deltaId, imageUrl, appliedDeltas);
                         }).catch(
                     (err) => {
                         imageHandlers.removeImagePlaceholder(placeholderId, deltaId);
                         imageHandlers.error(err);
                     });
 
-            }, 200);
+            }, 1);
         }
     }
 }

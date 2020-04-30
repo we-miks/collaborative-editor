@@ -58,8 +58,9 @@ class Composition {
             let convertedDelta = self.localOnlyDelta.revert.transform(delta);
             let convertedOldDelta = oldDelta.compose(self.localOnlyDelta.revert);
 
-            self.submitToUpstream(convertedDelta, convertedOldDelta);
             self.transformLocalOnlyDelta(delta);
+
+            self.submitToUpstream(convertedDelta, convertedOldDelta);
         });
     }
 
@@ -67,7 +68,8 @@ class Composition {
         this.localOnlyDelta = {
             change: new Delta(),
             revert: new Delta(),
-            steps: []
+            steps: [],
+            originalSteps: []
         };
     }
 
@@ -220,17 +222,25 @@ class Composition {
      * before applied to the editor. the local changes delta should be transformed by revertDelta before submitted to
      * the upstream server.
      */
-    addLocalOnlyDelta(changeDelta, revertDelta) {
+    addLocalOnlyDelta(changeDelta, revertDelta, convertAgainstLocalOnlyDelta = true) {
+
+        let convertedChange = convertAgainstLocalOnlyDelta ? this.localOnlyDelta.change.transform(changeDelta) : changeDelta;
+        let convertedRevert = convertAgainstLocalOnlyDelta ? this.localOnlyDelta.change.transform(revertDelta) : revertDelta;
+
+        this.quill.updateContents(convertedChange, "silent");
 
         let id = Math.ceil(Math.random() * 100000);
 
         this.localOnlyDelta.steps.push({
             id: id,
+            change: convertedChange,
+            revert: convertedRevert
+        });
+
+        this.localOnlyDelta.originalSteps.push({
             change: changeDelta,
             revert: revertDelta
-        })
-
-        this.updateQuill(changeDelta, "silent");
+        });
 
         this.updateLocalOnlyDelta();
         return id;
@@ -241,13 +251,16 @@ class Composition {
         let idx = this.localOnlyDelta.steps.findIndex((element) => {return element.id === id});
 
         if(idx !== -1) {
+
             let step = this.localOnlyDelta.steps.splice(idx, 1);
+            step = step[0];
 
-            this.quill.updateContents(step[0].revert, "silent");
+            this.quill.updateContents(step.revert, "silent");
+            this.transformLocalOnlyDelta(step.revert);
 
-            this.updateLocalOnlyDelta();
+            let originalStep = this.localOnlyDelta.originalSteps.splice(idx, 1);
 
-            return step[0];
+            return originalStep[0];
         } else {
             return null;
         }
@@ -265,9 +278,13 @@ class Composition {
     updateLocalOnlyDelta() {
         this.localOnlyDelta.change = new Delta();
         this.localOnlyDelta.revert = new Delta();
-        for(let step of this.localOnlyDelta.steps) {
-            this.localOnlyDelta.change = this.localOnlyDelta.change.compose(step.change);
-            this.localOnlyDelta.revert = this.localOnlyDelta.revert.compose(step.revert);
+
+        for (let i = 0, l = this.localOnlyDelta.steps.length; i < l; i++) {
+            this.localOnlyDelta.change = this.localOnlyDelta.change.compose(this.localOnlyDelta.steps[i].change);
+        }
+
+        for (let i = this.localOnlyDelta.steps.length - 1; i >= 0; i--) {
+            this.localOnlyDelta.revert = this.localOnlyDelta.revert.compose(this.localOnlyDelta.steps[i].revert);
         }
     }
 
@@ -275,7 +292,9 @@ class Composition {
         let convertedDelta = this.localOnlyDelta.change.transform(delta);
         this.quill.updateContents(convertedDelta, source);
 
-        this.transformLocalOnlyDelta(convertedDelta);
+        if(source !== Quill.sources.USER) {
+            this.transformLocalOnlyDelta(convertedDelta);
+        }
     }
 
     composeDeltas(deltaArray) {
