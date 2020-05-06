@@ -102,6 +102,10 @@ editor.on(EditorEvents.imageSkipped, ()=>{
     console.log("image skipped");
 });
 
+editor.on(EditorEvents.documentLoaded, () => {
+    console.log("document loaded");
+});
+
 let websocketEndpoint = "ws://127.0.0.1:8080";
 
 editor.syncThroughWebsocket(websocketEndpoint, "examples", "test-doc");

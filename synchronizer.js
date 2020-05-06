@@ -82,6 +82,8 @@ class Synchronizer  {
 
             // Initialize history recording
             self.editor.quill.getModule("history").init(self.editor);
+
+            self.editor.dispatchEvent(EditorEvents.documentLoaded, shareDBDocument);
         });
     }
 
