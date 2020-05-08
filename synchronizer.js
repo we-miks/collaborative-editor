@@ -80,6 +80,10 @@ class Synchronizer  {
                 self.editor.dispatchEvent(EditorEvents.documentDeleted, shareDBDocument);
             });
 
+            shareDBDocument.on('error', function(err) {
+                self.editor.dispatchEvent(EditorEvents.synchronizationError, err);
+            });
+
             // Initialize history recording
             self.editor.quill.getModule("history").init(self.editor);
 

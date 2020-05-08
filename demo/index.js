@@ -106,6 +106,11 @@ editor.on(EditorEvents.documentLoaded, () => {
     console.log("document loaded");
 });
 
+editor.on(EditorEvents.synchronizationError, (err) => {
+    console.log("connection error");
+    console.log(err);
+});
+
 let websocketEndpoint = "ws://127.0.0.1:8080";
 
 editor.syncThroughWebsocket(websocketEndpoint, "examples", "test-doc");
