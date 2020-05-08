@@ -85,32 +85,18 @@ class Composition {
     flush(oldDelta) {
         let upstreamDelta = this.composeDeltas(this.upstreamPendingDeltas);
         let finalSubmittedDelta = this.handleSubmitDeltaMerge(upstreamDelta);
+        let changeDelta = upstreamDelta.compose(finalSubmittedDelta);
 
-        this.handleLocalDeltaMerge(upstreamDelta, finalSubmittedDelta);
+        oldDelta = this.handleLocalDeltaMerge(upstreamDelta, finalSubmittedDelta, oldDelta);
 
         this.upstreamPendingDeltas.length = 0;
         this.pendingSubmitDeltas.length = 0;
 
-        let changeDelta = upstreamDelta.compose(finalSubmittedDelta);
-
-        if(!oldDelta) {
-
-            let currentDoc = this.getEditorContents();
-            let revertDelta = new Delta();
-
-            changeDelta.ops.forEach((op) => {
-                if(op.retain) {
-                    revertDelta.retain(op.retain);
-                } else if (op.insert) {
-                    revertDelta.delete(op.insert.length);
-                } else {
-                    console.log("unsupported operation");
-                }
-            });
-
-            oldDelta = currentDoc.compose(revertDelta);
+        if(upstreamDelta.ops.length !== 0) {
+            this.editor.dispatchEvent(EditorEvents.upstreamTextChanged, {delta: upstreamDelta, oldDelta: oldDelta});
         }
 
+        this.editor.dispatchEvent(EditorEvents.userTextChanged, {delta: finalSubmittedDelta, oldDelta: oldDelta.compose(upstreamDelta)});
         this.editor.dispatchEvent(EditorEvents.editorTextChanged, {delta: changeDelta, oldDelta: oldDelta});
     }
 
@@ -158,7 +144,28 @@ class Composition {
         return this.compositionInProgress;
     }
 
-    handleLocalDeltaMerge(upstreamDelta, finalSubmittedDelta) {
+    handleLocalDeltaMerge(upstreamDelta, finalSubmittedDelta, oldDelta) {
+
+        if(!oldDelta) {
+
+            // This is from the composition end event, in which situation we have lost the change to get old delta
+            // before change. So we have to calculate one by ourselves.
+
+            let currentDoc = this.getEditorContents();
+            let revertDelta = new Delta();
+
+            finalSubmittedDelta.ops.forEach((op) => {
+                if(op.retain) {
+                    revertDelta.retain(op.retain);
+                } else if (op.insert) {
+                    revertDelta.delete(op.insert.length);
+                } else {
+                    console.log("can't happen");
+                }
+            });
+
+            oldDelta = currentDoc.compose(revertDelta);
+        }
 
         if(upstreamDelta && upstreamDelta.ops.length !== 0) {
 
@@ -190,6 +197,8 @@ class Composition {
 
             this.updateQuill(localFixingDelta, "silent");
         }
+
+        return oldDelta;
     }
 
     handleSubmitDeltaMerge(upstreamDelta) {

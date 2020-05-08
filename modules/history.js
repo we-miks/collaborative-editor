@@ -16,9 +16,11 @@ class History {
 
         if(!this.editor) {
             this.editor = editor;
-            this.editor.on(EditorEvents.editorTextChanged, ({delta, oldDelta}) => {
-                let self = this;
-                self.record(delta, oldDelta);
+            this.editor.on(EditorEvents.userTextChanged, ({delta, oldDelta}) => {
+                this.record(delta, oldDelta);
+            });
+            this.editor.on(EditorEvents.upstreamTextChanged, ({delta}) => {
+               this.transform(delta);
             });
 
             this.quill.keyboard.addBinding({ key: 'Z', shortKey: true }, this.undo.bind(this));
