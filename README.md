@@ -62,6 +62,14 @@ There're 3 ways user might insert image into the editor: the toolbar button, dra
 and copy'n'paste from other web pages or applications, which are all taken good care of. The only thing left to do for
 the developers is to implement the uploading handler, uploads the image to the server and returns an image URL.
 
+### Local only delta
+
+To support image uploading placeholder, which should only appear in our local editor and never get uploaded to the
+server, we extend Quill's functionality to add local only deltas to the editor, and the upstream changes will be transformed
+by those local only deltas before applied to our editor, and before the delta is uploaded to the server, local only
+deltas are removed. Applied local only deltas could be removed from the stack in any order at any time.
+
+
 ## Getting Started
 
 There's a demo included in this repo, to see it up and running and play with it yourself, follow the instructions
@@ -78,8 +86,6 @@ $ npm install --save miks-collaborative-editor
 ```javascript
 import Editor from "miks-collaborative-editor";
 import 'quill/dist/quill.snow.css'
-import ReconnectingWebSocket from "reconnecting-websocket";
-import ShareDB from "sharedb/lib/client";
 
 // The current user's info, must contain both id and name field. 
 let author = {
