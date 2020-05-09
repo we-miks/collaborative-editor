@@ -139,7 +139,7 @@ class ImageHandlers {
                             composedAppliedDelta = composedAppliedDelta.compose(delta);
                         });
 
-                        changeDelta = composedAppliedDelta.transform(changeDelta);
+                        changeDelta = composedAppliedDelta.transform(changeDelta, true);
                     }
 
                     appliedDeltas.push(changeDelta);

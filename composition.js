@@ -55,7 +55,7 @@ class Composition {
             if(source !== 'user')
                 return;
 
-            let convertedDelta = self.localOnlyDelta.revert.transform(delta);
+            let convertedDelta = self.localOnlyDelta.revert.transform(delta, true);
             let convertedOldDelta = oldDelta.compose(self.localOnlyDelta.revert);
 
             self.transformLocalOnlyDelta(delta);
@@ -233,8 +233,8 @@ class Composition {
      */
     addLocalOnlyDelta(changeDelta, revertDelta, convertAgainstLocalOnlyDelta = true) {
 
-        let convertedChange = convertAgainstLocalOnlyDelta ? this.localOnlyDelta.change.transform(changeDelta) : changeDelta;
-        let convertedRevert = convertAgainstLocalOnlyDelta ? this.localOnlyDelta.change.transform(revertDelta) : revertDelta;
+        let convertedChange = convertAgainstLocalOnlyDelta ? this.localOnlyDelta.change.transform(changeDelta, true) : changeDelta;
+        let convertedRevert = convertAgainstLocalOnlyDelta ? this.localOnlyDelta.change.transform(revertDelta, true) : revertDelta;
 
         this.quill.updateContents(convertedChange, "silent");
 
@@ -277,8 +277,8 @@ class Composition {
 
     transformLocalOnlyDelta(delta) {
         this.localOnlyDelta.steps.forEach((step) => {
-            step.change = delta.transform(step.change);
-            step.revert = delta.transform(step.revert);
+            step.change = delta.transform(step.change, true);
+            step.revert = delta.transform(step.revert, true);
         })
 
         this.updateLocalOnlyDelta();
@@ -298,7 +298,7 @@ class Composition {
     }
 
     updateQuill(delta, source) {
-        let convertedDelta = this.localOnlyDelta.change.transform(delta);
+        let convertedDelta = this.localOnlyDelta.change.transform(delta, true);
         this.quill.updateContents(convertedDelta, source);
 
         if(source !== Quill.sources.USER) {
