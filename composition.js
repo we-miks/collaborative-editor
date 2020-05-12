@@ -84,10 +84,10 @@ class Composition {
 
     flush(oldDelta) {
         let upstreamDelta = this.composeDeltas(this.upstreamPendingDeltas);
-        let finalSubmittedDelta = this.handleSubmitDeltaMerge(upstreamDelta);
+        let [localChangeDelta, finalSubmittedDelta] = this.handleSubmitDeltaMerge(upstreamDelta);
         let changeDelta = upstreamDelta.compose(finalSubmittedDelta);
 
-        oldDelta = this.handleLocalDeltaMerge(upstreamDelta, finalSubmittedDelta, oldDelta);
+        oldDelta = this.handleLocalDeltaMerge(upstreamDelta, localChangeDelta, finalSubmittedDelta, oldDelta);
 
         this.upstreamPendingDeltas.length = 0;
         this.pendingSubmitDeltas.length = 0;
@@ -144,17 +144,16 @@ class Composition {
         return this.compositionInProgress;
     }
 
-    handleLocalDeltaMerge(upstreamDelta, finalSubmittedDelta, oldDelta) {
+    handleLocalDeltaMerge(upstreamDelta, localChangeDelta, finalSubmittedDelta, oldDelta) {
 
-        if(!oldDelta) {
+        let revertDelta = new Delta();
 
-            // This is from the composition end event, in which situation we have lost the change to get old delta
-            // before change. So we have to calculate one by ourselves.
+        if(!oldDelta || (upstreamDelta && upstreamDelta.ops.length !== 0)) {
 
-            let currentDoc = this.getEditorContents();
-            let revertDelta = new Delta();
+            // A delta that reverts the local change is required.
+            // The local change delta must be an insert op, so we revert it with a delete.
 
-            finalSubmittedDelta.ops.forEach((op) => {
+            localChangeDelta.ops.forEach((op) => {
                 if(op.retain) {
                     revertDelta.retain(op.retain);
                 } else if (op.insert) {
@@ -163,38 +162,28 @@ class Composition {
                     console.log("can't happen");
                 }
             });
+        }
 
+        if(!oldDelta) {
+            // This is from the composition end event, in which case we have lost the chance to get old delta
+            // before change. So we have to calculate one by ourselves.
+
+            let currentDoc = this.getEditorContents();
             oldDelta = currentDoc.compose(revertDelta);
         }
 
         if(upstreamDelta && upstreamDelta.ops.length !== 0) {
 
-            // This is a conflict situation
             // Since we paused upstream ops from applying, local editor is updated first.
-            // But from the server's perspective, upstream ops happened first, which should be the final truth.
+            // But from the server's perspective, upstream ops happens first, which should be the final truth.
             // So we need to revert the composition input in the editor first, apply upstream ops
             // and then redo the composition input in a transformed location.
 
-            // The final submitted delta must be an insert op, so we revert it with a delete.
+            // Revert op is calculated on the local change delta, which is before the applying of upstream delta.
+            // So we run the revert delta first, then the upstream delta, finally the transformed local change delta(the
+            // final submitted delta).
 
-            let revertOp = new Delta();
-            if(finalSubmittedDelta && finalSubmittedDelta.ops.length !== 0) {
-                finalSubmittedDelta.ops.forEach((op) => {
-                    if(op.retain) {
-                        revertOp.retain(op.retain);
-                    } else if (op.insert) {
-                        revertOp.delete(op.insert.length);
-                    } else {
-                        console.log("exceptional situation");
-                    }
-                });
-            }
-
-            // Revert op is calculated on the final submitted delta, which is transformed on the upstream delta already.
-            // So we run the upstream op first, then the final submitted op, then the revert op.
-
-            let localFixingDelta = upstreamDelta.compose(finalSubmittedDelta).compose(revertOp);
-
+            let localFixingDelta = revertDelta.compose(upstreamDelta).compose(finalSubmittedDelta);
             this.updateQuill(localFixingDelta, "silent");
         }
 
@@ -213,7 +202,7 @@ class Composition {
         // Submit to synchronizer
         this.synchronizer.submitDeltaToUpstream(transformedPendingSubmitDelta);
 
-        return transformedPendingSubmitDelta;
+        return [pendingSubmitDelta, transformedPendingSubmitDelta];
     }
 
     addUpstreamPendingDelta(delta) {
