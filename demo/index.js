@@ -1,6 +1,7 @@
 import Editor from "../editor";
 import 'quill/dist/quill.snow.css'
 import EditorEvents from "../editor-events";
+import '../modules/task-list';
 
 let authors = [
     {
@@ -84,14 +85,15 @@ let editorOptions = {
 let toolbarOptions = [
     ['bold', 'italic', 'underline', 'strike'],
     [{'header': 1}, {'header': 2}, {'header': 3}],
-    [{'list': 'ordered'}, {'list': 'bullet'}, {'indent': '+1'}, {'indent': '-1'}],
+    [{'list': 'ordered'}, {'list': 'bullet'}, 'task-list', {'indent': '+1'}, {'indent': '-1'}],
     ['align', 'color', 'background'],
     ['blockquote', 'code-block', 'link', 'image']
 ];
 
 let quillOptions = {
     modules: {
-        toolbar: toolbarOptions
+        toolbar: toolbarOptions,
+        'task-list': true
     },
     theme: 'snow'
 };
