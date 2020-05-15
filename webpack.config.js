@@ -4,7 +4,8 @@ const HtmlWebpackPlugin = require('html-webpack-plugin');
 module.exports = {
     mode: 'development',
     entry: {
-        demo: "./demo/index.js"
+        index: "./demo/index.js",
+        display: "./demo/display.js"
     },
     output: {
         filename: '[name].js',
@@ -37,12 +38,19 @@ module.exports = {
         compress: false,
         host: "0.0.0.0",
         port: 9001,
-        openPage: 'http://127.0.0.1:9001/demo.html'
+        openPage: 'http://127.0.0.1:9001/index.html'
     },
     plugins: [
         new HtmlWebpackPlugin({
+            chunks: ["display"],
+            template: 'demo/display.html',
+            filename: 'display.html',
+            minify: false
+        }),
+        new HtmlWebpackPlugin({
+            chunks: ["index"],
             template: 'demo/index.html',
-            filename: 'demo.html',
+            filename: 'index.html',
             minify: false
         })
     ]
