@@ -179,7 +179,7 @@ class AuthorSidebar {
                 // For embed elements such as image, op.insert is an object and length is 1;
                 let length = op.insert.length || 1;
 
-                let lines = this.quill.getLines(index, length);
+                let lines = self.quill.getLines(index, length);
 
                 if(typeof(op.insert) === 'string') {
                     let regex = /\n/g;
@@ -189,7 +189,7 @@ class AuthorSidebar {
                         if(op.attributes && op.attributes.author)
                             author = op.attributes.author;
 
-                        this.createSidebarItem(latestLineIndex);
+                        self.createSidebarItem(latestLineIndex);
                     }
                 }
 
@@ -242,27 +242,35 @@ class AuthorSidebar {
 
             } else if (op.delete) {
 
-                let [currentLine, offset] = this.quill.getLine(index);
-                let currentLineIndex = allLines.indexOf(currentLine);
+                let [currentLine, offset] = self.quill.getLine(index);
 
-                self.addAffectedLine(affectedLines, currentLine);
+                let currentLineIndex = -1;
+
+                if(currentLine) {
+                    currentLineIndex = allLines.indexOf(currentLine);
+                    self.addAffectedLine(affectedLines, currentLine);
+                }
 
                 // A more complicated situation where even if the total line number is not changed, it is likely
                 // to be a deletion of one line followed by an insertion of new line.
                 // So we use the parallel delta to invert current delta to find out what exactly has been deleted.
 
                 let afterDelete = parallelDelta.compose(new Delta().retain(index).delete(op.delete));
-                let diffDelta = afterDelete.diff(parallelDelta, index);
 
-                diffDelta.ops.forEach((dop) => {
-                    if(dop.insert) {
-                        let regex = /\n/g;
-                        while ( (regex.exec(dop.insert)) ) {
-                            // A line is deleted.
-                            self.deleteSidebarItem(currentLineIndex, 1);
+                // Edge case for the last line break in the editor
+                if(currentLineIndex !== -1) {
+                    let diffDelta = afterDelete.diff(parallelDelta, index);
+
+                    diffDelta.ops.forEach((dop) => {
+                        if(dop.insert) {
+                            let regex = /\n/g;
+                            while ( (regex.exec(dop.insert)) ) {
+                                // A line is deleted.
+                                self.deleteSidebarItem(currentLineIndex, 1);
+                            }
                         }
-                    }
-                });
+                    });
+                }
 
                 parallelDelta = afterDelete;
 

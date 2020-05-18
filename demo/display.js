@@ -1,6 +1,6 @@
 import ReconnectingWebSocket from "reconnecting-websocket";
 import ShareDB from "sharedb/lib/client";
-import { convertDeltaToHtml }  from 'node-quill-converter';
+import { QuillDeltaToHtmlConverter } from 'quill-delta-to-html';
 import '../display.styl';
 
 let websocketEndpoint = "ws://127.0.0.1:8080";
@@ -18,7 +18,9 @@ doc.fetch((err) => {
 
     let delta = doc.data;
 
-    document.querySelector(".content").innerHTML = convertDeltaToHtml(delta);
+    let converter = new QuillDeltaToHtmlConverter(delta.ops, {});
+
+    document.querySelector(".content").innerHTML = converter.convert();
 
     doc.destroy();
     socket.close();
