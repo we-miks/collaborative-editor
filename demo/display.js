@@ -1,6 +1,9 @@
 import ReconnectingWebSocket from "reconnecting-websocket";
 import ShareDB from "sharedb/lib/client";
 import { QuillDeltaToHtmlConverter } from 'quill-delta-to-html';
+import richText from "rich-text";
+ShareDB.types.register(richText.type);
+
 import '../display.styl';
 
 let websocketEndpoint = "ws://127.0.0.1:8080";
