@@ -1,6 +1,6 @@
 import ReconnectingWebSocket from "reconnecting-websocket";
 import ShareDB from "sharedb/lib/client";
-import { QuillDeltaToHtmlConverter } from 'quill-delta-to-html';
+import Quill from 'quill';
 import richText from "rich-text";
 ShareDB.types.register(richText.type);
 
@@ -13,6 +13,15 @@ let connection = new ShareDB.Connection(socket);
 
 let doc = connection.get("examples", "test-doc");
 
+
+// Create a hidden quill editor to parse delta to html
+
+
+let editorContainer = document.createElement('div');
+editorContainer.style.display = 'none';
+
+let quill = new Quill(editorContainer);
+
 doc.fetch((err) => {
     if(err) {
         console.log(err);
@@ -21,9 +30,9 @@ doc.fetch((err) => {
 
     let delta = doc.data;
 
-    let converter = new QuillDeltaToHtmlConverter(delta.ops, {});
+    quill.setContents(delta);
 
-    document.querySelector(".content").innerHTML = converter.convert();
+    document.querySelector(".content").innerHTML = quill.root.innerHTML;
 
     doc.destroy();
     socket.close();
