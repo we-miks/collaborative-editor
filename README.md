@@ -201,11 +201,24 @@ let websocketEndpoint = "ws://localhost:8080";
 editor.syncThroughWebsocket(websocketEndpoint, "examples", "test-doc");
 
 ```
+***Content display***
+
+The content is stored as Delta in the backend database, which should be converted into
+HTML before rendering on a web page. For details please refer to the Development section.
+
+Since Quill uses CSS to implement some of the functions such as [list](https://github.com/quilljs/quill/issues/979).
+The relevent CSS rules should also be added to the content displaying page. We extract the
+required CSS rules in ```display.styl``` file to be imported in the content displaying page.
+Import the file and add a class ```ql-editor``` to the parent element of HTML content to
+properly render the content. Check the demo for details.
+
 
 ## Development
 
 There's a demo included in this repository to load the editor,
 which could also be used to do the development. The demo is located under ```demo``` directory.
+
+***Load the editor***
 
 Node modules should be installed first:
 
@@ -230,5 +243,21 @@ $ npm start
 ```
 
 Now you should be able to see a webpage popup with a loaded editor.
+
+***Display the content***
+
+Since the content is stored in Delta format, it must be converted into HTML before
+rendered on a web page. We could use Quill to do the converting. A demo is included
+in ```display.js```. Open another browser tab and navigate to:
+
+```
+http://127.0.0.1:9001/display.html
+```
+
+And you will see a web page with rendered HTML content displayed.
+
+## Contribution
+
+Any kind of contribution is welcome!
 
 Don't hesitate! Submit your PR!

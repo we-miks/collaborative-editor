@@ -130,9 +130,21 @@ editor.syncThroughWebsocket(websocketEndpoint, "examples", "test-doc");
 
 ```
 
-## Development
+***内容加载***
+
+编辑后的内容以Delta的形式存储在后端数据库中，展示前需要使用Quill编辑器转换为HTML。在demo中包含了
+HTML转换的示例代码，详情参见后面的开发章节。
+
+由于Quill使用了CSS来实现一些功能，比如[多级嵌套列表](https://github.com/quilljs/quill/issues/979)，在展示内容时，
+必须把这些CSS同时加载出来，内容才能正确显示。在本项目的```display.styl```样式文件中包含了展示内容时需要
+加载的CSS。在展示内容的页面需要加载这个文件，并且在内容的父级元素上添加一个class：```ql-editor```。
+可以参考demo中的示例代码。
+
+## 开发
 
 开发时可以使用本仓库中包含的demo来启动编辑器进行调试。Demo代码位于```demo```文件夹中。
+
+***加载编辑器***
 
 首先安装npm依赖：
 
@@ -155,4 +167,19 @@ $ npm start
 
 浏览器应该已经自动弹出新窗口，并且加载出了编辑器和测试的内容。
 
+***加载内容***
+由于后端存储的内容是Delta格式，在页面上进行展示时，需要转换为HTML格式。我们可以通过Quill编辑器完成
+转换。在demo中包含了一个转换内容并展示的页面```display.js``。打开一个新的浏览器窗口并访问：
+
+```
+http://127.0.0.1:9001/display.html
+```
+可以看到转换后的内容。
+
+## 贡献
+
+欢迎任何形式的贡献。
+
 有任何问题，欢迎提交Issue。欢迎提交PR。
+
+加微信交流：lencyforce
