@@ -201,6 +201,7 @@ let websocketEndpoint = "ws://localhost:8080";
 editor.syncThroughWebsocket(websocketEndpoint, "examples", "test-doc");
 
 ```
+
 ***Content display***
 
 The content is stored as Delta in the backend database, which should be converted into
