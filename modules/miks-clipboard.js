@@ -1,5 +1,6 @@
 import Quill from "quill";
 import EditorEvents from "../editor-events";
+import normalizeUrl from "normalize-url";
 const Clipboard = Quill.import("modules/clipboard");
 const Delta = Quill.import("delta");
 
@@ -72,15 +73,17 @@ class MiksClipboard extends Clipboard {
         let func;
         let imageHandlers = this.editor.imageHandlers;
 
-        if(imageHandlers.isDataURI(src)) {
+        let normalizedSrc = normalizeUrl(src)
+
+        if(imageHandlers.isDataURI(normalizedSrc)) {
             func = this.editor.options.image.handlers.imageDataURIUpload;
-        }else if(imageHandlers.isImageSrc(src)) {
+        }else if(imageHandlers.isImageSrc(normalizedSrc)) {
             func = this.editor.options.image.handlers.imageSrcUpload;
         } else {
             // Local files
             // Browser has no access to local files
             // So skip this file and send a message to editor
-            this.editor.dispatchEvent(EditorEvents.imageSkipped, src);
+            this.editor.dispatchEvent(EditorEvents.imageSkipped, normalizedSrc);
         }
 
         if(func) {
@@ -90,9 +93,9 @@ class MiksClipboard extends Clipboard {
             let deltaId = imageHandlers.insertImagePlaceholder(placeholderId, index);
 
             setTimeout(() => {
-                imageHandlers.previewInImagePlaceholder(placeholderId, src);
+                imageHandlers.previewInImagePlaceholder(placeholderId, normalizedSrc);
 
-                func(src)
+                func(normalizedSrc)
                     .then(
                         (imageUrl) => {
                             imageHandlers.replaceImagePlaceholderWithImage(placeholderId, deltaId, imageUrl, appliedDeltas);
