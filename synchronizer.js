@@ -54,7 +54,11 @@ class Synchronizer  {
         shareDBDocument.subscribe(function(err) {
             if (err) {
                 self.log(err);
-                return;
+                throw err;
+            }
+
+            if(self.doc.type === null) {
+                throw new Error("doc does not exist.");
             }
 
             self.editor.dispatchEvent(EditorEvents.beforeSync, shareDBDocument);
