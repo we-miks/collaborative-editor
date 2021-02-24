@@ -281,71 +281,91 @@ class AuthorSidebar {
             }
         }
 
-        affectedLines.forEach((line) => {
-            let lineIndex = allLines.indexOf(line);
-            self.updateLineAuthor(line, lineIndex);
-            self.adjustSidebarItemPosition(line, lineIndex);
-        });
+        this.updateAffectedLineRecursively(0, affectedLines, allLines);
+    }
+
+    updateAffectedLineRecursively(current, affectedLines, allLines) {
+        if (current >= affectedLines.length)
+            return;
+
+        let line = affectedLines[current];
+        let lineIndex = allLines.indexOf(line);
+
+        let self = this;
+
+        this.updateLineAuthor(line, lineIndex)
+            .then(() => {
+                self.adjustSidebarItemPosition(line, lineIndex);
+                self.updateAffectedLineRecursively(current+1, affectedLines, allLines);
+            })
+            .catch((err) => {
+                console.error(err);
+            });
     }
 
     updateLineAuthor(line, lineIndex) {
 
-        let maxLengthAuthor = 0;
-        let maxLength = 0;
+        return new Promise((resolve, reject) => {
+            let maxLengthAuthor = 0;
+            let maxLength = 0;
 
-        let authorLength = {};
+            let authorLength = {};
 
-        let current = line.children.head;
+            let current = line.children.head;
 
-        let sidebarItem = this.sidebarItems[lineIndex];
-        this.updateAuthorInfoOnSidebarItem(sidebarItem, lineIndex); // Clear previous author info
+            let sidebarItem = this.sidebarItems[lineIndex];
+            this.updateAuthorInfoOnSidebarItem(sidebarItem, lineIndex); // Clear previous author info
 
-        if(current) {
-            while(current) {
-                let length = current.length();
+            if(current) {
+                while(current) {
+                    let length = current.length();
 
-                if(!current.domNode.getAttribute) {
-                    // Text node
-                } else {
-                    let authorId = this.authorAttribute.value(current.domNode);
-
-                    if(typeof(authorLength[authorId]) === 'undefined') {
-                        authorLength[authorId] = length;
+                    if(!current.domNode.getAttribute) {
+                        // Text node
                     } else {
-                        authorLength[authorId] += length;
+                        let authorId = this.authorAttribute.value(current.domNode);
+
+                        if(typeof(authorLength[authorId]) === 'undefined') {
+                            authorLength[authorId] = length;
+                        } else {
+                            authorLength[authorId] += length;
+                        }
+
+                        if(authorLength[authorId] > maxLength) {
+                            maxLength = authorLength[authorId];
+                            maxLengthAuthor = authorId;
+                        }
                     }
 
-                    if(authorLength[authorId] > maxLength) {
-                        maxLength = authorLength[authorId];
-                        maxLengthAuthor = authorId;
-                    }
+                    current = current.next;
                 }
 
-                current = current.next;
-            }
+                if(maxLengthAuthor === 0) {
+                    resolve();
+                    return;
+                }
 
-            if(maxLengthAuthor === 0) {
-                return;
-            }
+                // Update author's name inside sidebar item
+                let lineAuthorId = maxLengthAuthor;
+                let self = this;
 
-            // Update author's name inside sidebar item
-            let lineAuthorId = maxLengthAuthor;
-            let self = this;
-
-            if(!this.authorsInfo[lineAuthorId]) {
-                // Author info must be retrieved from the store
-                self.options.handlers.getAuthorInfoById(lineAuthorId)
-                    .then((author) => {
-                        self.authorsInfo[lineAuthorId] = author;
-                        self.updateAuthorInfoOnSidebarItem(sidebarItem, lineIndex, lineAuthorId);
-                    })
-                    .catch((err) => {
-                        console.log(err);
-                    });
-            } else {
-                this.updateAuthorInfoOnSidebarItem(sidebarItem, lineIndex, lineAuthorId);
+                if(!this.authorsInfo[lineAuthorId]) {
+                    // Author info must be retrieved from the store
+                    self.options.handlers.getAuthorInfoById(lineAuthorId)
+                        .then((author) => {
+                            self.authorsInfo[lineAuthorId] = author;
+                            self.updateAuthorInfoOnSidebarItem(sidebarItem, lineIndex, lineAuthorId);
+                            resolve();
+                        })
+                        .catch((err) => {
+                            reject(err);
+                        });
+                } else {
+                    this.updateAuthorInfoOnSidebarItem(sidebarItem, lineIndex, lineAuthorId);
+                    resolve();
+                }
             }
-        }
+        });
     }
 
     updateAuthorInfoOnSidebarItem(sidebarItem, itemIndex, authorId) {

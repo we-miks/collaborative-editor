@@ -60,6 +60,8 @@ let editorOptions = {
 
                     let author = authors.find((a) => a.id + '' === authorId);
 
+                    console.log("user info retrieved from server: " + authorId);
+
                     if(author) {
                         resolve(author);
                     }else{
