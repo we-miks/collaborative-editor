@@ -22,10 +22,6 @@ Quill.register(ImagePlaceholder);
 Quill.register("modules/history", History);
 Quill.register("modules/clipboard", MiksClipboard);
 
-// For icons of header value 3
-const icons = Quill.import('ui/icons');
-icons['header'][3] = require('!html-loader!quill/assets/icons/header-3.svg');
-
 class Editor {
 
     constructor(container, editorOptions, quillOptions) {

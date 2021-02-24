@@ -9,6 +9,10 @@ import Quill from 'quill';
 import richText from "rich-text";
 ShareDB.types.register(richText.type);
 
+// For icons of header value 3
+const icons = Quill.import('ui/icons');
+icons['header'][3] = require('!html-loader!quill/assets/icons/header-3.svg');
+
 import '../display.styl';
 
 
